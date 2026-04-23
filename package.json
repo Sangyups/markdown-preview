@@ -1,0 +1,33 @@
+{
+    "name": "markdown-preview",
+    "version": "0.1.0",
+    "private": true,
+    "bin": {
+        "mdp": "./bin/markdown-preview.js"
+    },
+    "files": [
+        "bin",
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "bun run scripts/build.ts",
+        "dev": "bun run scripts/dev.ts",
+        "start": "bun run dist/cli/index.js",
+        "prepare": "bun run build",
+        "check": "biome check README.md biome.json package.json tsconfig.json scripts src test",
+        "format": "biome format --write README.md biome.json package.json tsconfig.json scripts src test",
+        "test": "bun test"
+    },
+    "dependencies": {
+        "electron": "^41.3.0",
+        "markdown-it": "^14.1.1",
+        "mermaid": "^11.14.0"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.4.12",
+        "@types/bun": "^1.3.13",
+        "@types/node": "^25.6.0",
+        "typescript": "^6.0.3"
+    }
+}

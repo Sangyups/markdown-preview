@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Markdown Preview</title>
+    <link
+      rel="stylesheet"
+      href="./preview.css"
+    />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <p class="app-kicker">Markdown Preview</p>
+        <h1
+          class="app-title"
+          id="file-name"
+        >
+          Loading…
+        </h1>
+        <p
+          class="app-path"
+          id="file-path"
+        ></p>
+      </header>
+      <p
+        class="status status--info"
+        id="status"
+        role="status"
+      ></p>
+      <article
+        class="preview markdown-body"
+        id="preview"
+      ></article>
+    </main>
+    <script
+      type="module"
+      src="./index.js"
+    ></script>
+  </body>
+</html>

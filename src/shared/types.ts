@@ -8,10 +8,18 @@ export interface PreviewStatus {
     tone: PreviewStatusTone;
 }
 
+export interface PreviewPreferences {
+    fontFamily: string;
+    fontSize: number;
+    monospaceFontFamily: string;
+    monospaceFontSize: number;
+}
+
 export interface PreviewPayload {
     fileName: string;
     filePath: string;
     html: string;
+    preferences: PreviewPreferences;
     status: PreviewStatus;
     updatedAt: number;
 }

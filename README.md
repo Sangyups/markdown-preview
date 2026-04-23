@@ -63,6 +63,22 @@ bun run dev -- docs/superpowers/specs/2026-04-23-markdown-preview-renderer-desig
 bun run dev -- docs
 ```
 
+## 설정 파일
+
+사용자 설정 파일은 `$HOME/.config/markdown-preview/config.toml` 경로를 사용한다.
+파일이 없으면 첫 실행 시 기본값 기준으로 자동 생성한다.
+
+```toml
+font-family = ["Iosevka Aile", "Pretendard", "sans-serif"]
+font-size = 18
+monospace-font-family = ["Iosevka Term", "monospace"]
+monospace-font-size = 15
+width = 1440
+height = 960
+```
+
+설정 파일이 없거나 값이 잘못되면 기본값을 사용한다.
+
 ## 검증 명령
 
 ```bash

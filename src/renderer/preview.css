@@ -1,6 +1,13 @@
 :root {
+    --preview-font-family:
+        "Apple SD Gothic Neo", "Avenir Next", "Segoe UI", sans-serif;
+    --preview-font-size: 16px;
+    --preview-monospace-font-family:
+        "SFMono-Regular", "JetBrains Mono", monospace;
+    --preview-monospace-font-size: 16px;
     color: #1f2521;
-    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-family: var(--preview-font-family);
+    font-size: var(--preview-font-size);
     background:
         radial-gradient(
             circle at top left,
@@ -40,7 +47,7 @@ body {
 }
 
 .app-title {
-    font-family: "Iowan Old Style", "Palatino Linotype", serif;
+    font-family: inherit;
     font-size: clamp(2rem, 4vw, 3.2rem);
     line-height: 1.05;
     margin: 0;
@@ -89,7 +96,7 @@ body {
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4 {
-    font-family: "Iowan Old Style", "Palatino Linotype", serif;
+    font-family: inherit;
     letter-spacing: -0.02em;
     line-height: 1.2;
     margin-bottom: 0.75em;
@@ -111,7 +118,8 @@ body {
 
 .markdown-body code,
 .markdown-body pre {
-    font-family: "SFMono-Regular", "JetBrains Mono", monospace;
+    font-family: var(--preview-monospace-font-family);
+    font-size: var(--preview-monospace-font-size);
 }
 
 .markdown-body :not(pre) > code {

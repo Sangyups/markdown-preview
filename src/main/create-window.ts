@@ -1,8 +1,12 @@
 import { BrowserWindow, shell } from "electron";
 
+import { type AppConfig, DEFAULT_APP_CONFIG } from "../shared/config";
 import { resolveRuntimePath } from "../shared/runtime-path";
 
-export function createWindow(fileName: string) {
+export function createWindow(
+    fileName: string,
+    windowConfig: Pick<AppConfig, "height" | "width"> = DEFAULT_APP_CONFIG
+) {
     const preloadPath = resolveRuntimePath(process.argv, "../preload/index.js");
     const rendererHtmlPath = resolveRuntimePath(
         process.argv,
@@ -11,7 +15,7 @@ export function createWindow(fileName: string) {
 
     const previewWindow = new BrowserWindow({
         backgroundColor: "#f7f7f3",
-        height: 1560,
+        height: windowConfig.height,
         show: false,
         title: `${fileName} · Markdown Preview`,
         webPreferences: {
@@ -19,7 +23,7 @@ export function createWindow(fileName: string) {
             nodeIntegration: false,
             preload: preloadPath,
         },
-        width: 1560,
+        width: windowConfig.width,
     });
 
     previewWindow.webContents.on("will-navigate", (event, navigationUrl) => {

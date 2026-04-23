@@ -111,6 +111,24 @@ describe("createWindow", () => {
         expect(fakeWindow.show).toHaveBeenCalledTimes(1);
     });
 
+    test("uses configured window dimensions when provided", async () => {
+        process.argv = [mockBunExecutablePath, mockMainEntryPath];
+
+        const { createWindow } = await import("../../src/main/create-window");
+
+        createWindow("README.md", {
+            height: 900,
+            width: 1280,
+        });
+
+        expect(BrowserWindow).toHaveBeenCalledWith(
+            expect.objectContaining({
+                height: 900,
+                width: 1280,
+            })
+        );
+    });
+
     test("blocks in-app navigation and opens safe external urls in the default browser", async () => {
         process.argv = [mockBunExecutablePath, mockMainEntryPath];
 

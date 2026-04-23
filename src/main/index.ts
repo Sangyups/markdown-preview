@@ -1,6 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { app } from "electron";
+import {
+    type AppConfig,
+    loadAppConfig,
+    toCssFontFamilyValue,
+} from "../shared/config";
 import { renderMarkdown } from "../shared/markdown/render-markdown";
 import type { PreviewPayload } from "../shared/types";
 import { createWindow } from "./create-window";
@@ -20,12 +25,13 @@ async function bootstrap() {
 
     await app.whenReady();
 
-    const previewWindow = createWindow(path.basename(targetPath));
-    let currentPreview = await buildPreviewPayload(targetPath);
+    const appConfig = await loadAppConfig();
+    const previewWindow = createWindow(path.basename(targetPath), appConfig);
+    let currentPreview = await buildPreviewPayload(targetPath, appConfig);
 
     const unregisterPreviewIpc = registerPreviewIpc(() => currentPreview);
     const stopWatching = watchFile(targetPath, async () => {
-        currentPreview = await buildPreviewPayload(targetPath);
+        currentPreview = await buildPreviewPayload(targetPath, appConfig);
         sendPreviewUpdate(previewWindow, currentPreview);
     });
 
@@ -39,7 +45,10 @@ async function bootstrap() {
     });
 }
 
-async function buildPreviewPayload(filePath: string): Promise<PreviewPayload> {
+async function buildPreviewPayload(
+    filePath: string,
+    appConfig: AppConfig
+): Promise<PreviewPayload> {
     try {
         const markdownSource = await readFile(filePath, "utf8");
         const html = renderMarkdown(markdownSource);
@@ -48,6 +57,14 @@ async function buildPreviewPayload(filePath: string): Promise<PreviewPayload> {
             fileName: path.basename(filePath),
             filePath,
             html,
+            preferences: {
+                fontFamily: toCssFontFamilyValue(appConfig.fontFamily),
+                fontSize: appConfig.fontSize,
+                monospaceFontFamily: toCssFontFamilyValue(
+                    appConfig.monospaceFontFamily
+                ),
+                monospaceFontSize: appConfig.monospaceFontSize,
+            },
             status: {
                 message: "Watching for file changes.",
                 tone: "info",
@@ -61,6 +78,14 @@ async function buildPreviewPayload(filePath: string): Promise<PreviewPayload> {
             fileName: path.basename(filePath),
             filePath,
             html: renderPreviewError(message),
+            preferences: {
+                fontFamily: toCssFontFamilyValue(appConfig.fontFamily),
+                fontSize: appConfig.fontSize,
+                monospaceFontFamily: toCssFontFamilyValue(
+                    appConfig.monospaceFontFamily
+                ),
+                monospaceFontSize: appConfig.monospaceFontSize,
+            },
             status: {
                 message,
                 tone: "error",

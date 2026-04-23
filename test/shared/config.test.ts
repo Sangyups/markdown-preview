@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -12,8 +12,12 @@ import {
 } from "../../src/shared/config";
 
 const tempPaths: string[] = [];
+const originalWarn = console.warn;
+const warn = mock(() => undefined);
 
 afterEach(async () => {
+    console.warn = originalWarn;
+    warn.mockClear();
     await Promise.all(
         tempPaths
             .splice(0)
@@ -79,6 +83,35 @@ describe("loadAppConfig", () => {
         });
     });
 
+    test("accepts single font-family strings in TOML config", async () => {
+        const homeDirectory = await makeTempDir();
+        const configFilePath = resolveConfigFilePath(homeDirectory);
+
+        await mkdir(path.dirname(configFilePath), { recursive: true });
+        await writeFile(
+            configFilePath,
+            [
+                'font-family = "Iosevka Aile"',
+                "font-size = 18",
+                'monospace-font-family = "Iosevka Term"',
+                "monospace-font-size = 15",
+                "width = 1440",
+                "height = 960",
+            ].join("\n")
+        );
+
+        const appConfig = await loadAppConfig(configFilePath);
+
+        expect(appConfig).toEqual({
+            fontFamily: ["Iosevka Aile"],
+            fontSize: 18,
+            height: 960,
+            monospaceFontFamily: ["Iosevka Term"],
+            monospaceFontSize: 15,
+            width: 1440,
+        });
+    });
+
     test("falls back to defaults for unsupported values", async () => {
         const homeDirectory = await makeTempDir();
         const configFilePath = resolveConfigFilePath(homeDirectory);
@@ -99,6 +132,22 @@ describe("loadAppConfig", () => {
         const appConfig = await loadAppConfig(configFilePath);
 
         expect(appConfig).toEqual(DEFAULT_APP_CONFIG);
+    });
+
+    test("falls back to defaults and warns when the TOML is malformed", async () => {
+        const homeDirectory = await makeTempDir();
+        const configFilePath = resolveConfigFilePath(homeDirectory);
+
+        await mkdir(path.dirname(configFilePath), { recursive: true });
+        await writeFile(configFilePath, 'font-family = ["broken"');
+        console.warn = warn as typeof console.warn;
+
+        const appConfig = await loadAppConfig(configFilePath);
+
+        expect(appConfig).toEqual(DEFAULT_APP_CONFIG);
+        expect(warn).toHaveBeenCalledWith(
+            `Failed to load config at ${configFilePath}. Falling back to defaults.`
+        );
     });
 });
 

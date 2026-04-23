@@ -24,6 +24,16 @@ export async function renderMermaidBlocks(rootElement: ParentNode) {
     );
 }
 
+export function normalizeMermaidSvg(diagramContainer: ParentNode) {
+    const svgElement = diagramContainer.querySelector<SVGSVGElement>("svg");
+
+    if (!svgElement) {
+        return;
+    }
+
+    svgElement.style.height = "auto";
+}
+
 async function renderMermaidBlock(mermaidBlock: HTMLElement) {
     const encodedSource = mermaidBlock.dataset.mermaidSource;
     const diagramContainer =
@@ -43,6 +53,7 @@ async function renderMermaidBlock(mermaidBlock: HTMLElement) {
             decodeMermaidSource(encodedSource)
         );
         diagramContainer.innerHTML = svg;
+        normalizeMermaidSvg(diagramContainer);
         bindFunctions?.(diagramContainer);
         mermaidBlock.dataset.mermaidState = "ready";
         errorContainer.hidden = true;

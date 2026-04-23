@@ -11,6 +11,14 @@ const markdown = new MarkdownIt({
 const renderFence = markdown.renderer.rules.fence?.bind(
     markdown.renderer.rules
 );
+const renderTableOpen =
+    markdown.renderer.rules.table_open?.bind(markdown.renderer.rules) ??
+    ((tokens, index, options, _env, self) =>
+        self.renderToken(tokens, index, options));
+const renderTableClose =
+    markdown.renderer.rules.table_close?.bind(markdown.renderer.rules) ??
+    ((tokens, index, options, _env, self) =>
+        self.renderToken(tokens, index, options));
 
 markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
     const token = tokens[index];
@@ -30,6 +38,18 @@ markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
         "</section>",
     ].join("");
 };
+
+markdown.renderer.rules.table_open = (tokens, index, options, env, self) =>
+    `<div class="table-scroll">${renderTableOpen(
+        tokens,
+        index,
+        options,
+        env,
+        self
+    )}`;
+
+markdown.renderer.rules.table_close = (tokens, index, options, env, self) =>
+    `${renderTableClose(tokens, index, options, env, self)}</div>`;
 
 export function renderMarkdown(source: string) {
     return markdown.render(source);

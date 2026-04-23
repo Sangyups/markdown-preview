@@ -22,4 +22,13 @@ describe("renderMarkdown", () => {
 
         expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     });
+
+    test("wraps tables in a horizontal scroll container", () => {
+        const html = renderMarkdown(
+            "| a | b |\n| --- | --- |\n| one | two |\n"
+        );
+
+        expect(html).toContain('<div class="table-scroll"><table>');
+        expect(html).toContain("</table>\n</div>");
+    });
 });

@@ -17,6 +17,14 @@ describe("renderMarkdown", () => {
         expect(html).not.toContain('<code class="language-mermaid">');
     });
 
+    test("highlights non-mermaid fenced code blocks", () => {
+        const html = renderMarkdown("```ts\nconst count: number = 1;\n```");
+
+        expect(html).toContain('<code class="hljs language-ts">');
+        expect(html).toContain('class="hljs-keyword"');
+        expect(html).toContain('class="hljs-number"');
+    });
+
     test("escapes raw html by default", () => {
         const html = renderMarkdown("<script>alert(1)</script>");
 

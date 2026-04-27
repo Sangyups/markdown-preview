@@ -1,9 +1,11 @@
+import hljs from "highlight.js/lib/common";
 import MarkdownIt from "markdown-it";
 
 import { encodeMermaidSource, isMermaidFence } from "./extract-mermaid-blocks";
 
 const markdown = new MarkdownIt({
     html: true,
+    highlight: highlightCode,
     linkify: true,
     typographer: false,
 });
@@ -101,6 +103,22 @@ markdown.renderer.rules.table_close = (tokens, index, options, env, self) =>
 
 export function renderMarkdown(source: string) {
     return markdown.render(source);
+}
+
+function highlightCode(source: string, language: string) {
+    const normalizedLanguage = language.trim();
+    const highlightedCode =
+        normalizedLanguage && hljs.getLanguage(normalizedLanguage)
+            ? hljs.highlight(source, {
+                  ignoreIllegals: true,
+                  language: normalizedLanguage,
+              }).value
+            : markdown.utils.escapeHtml(source);
+    const languageClass = normalizedLanguage
+        ? ` language-${escapeHtmlAttribute(normalizedLanguage)}`
+        : "";
+
+    return `<pre><code class="hljs${languageClass}">${highlightedCode}</code></pre>`;
 }
 
 function renderAllowedRawHtml(

@@ -87,6 +87,76 @@ JSON:
 }
 ```
 
+JavaScript:
+
+```js
+const files = ["README.md", "example.md", "docs/architecture.md"];
+const markdownFiles = files.filter((file) => file.endsWith(".md"));
+
+console.log(`Found ${markdownFiles.length} markdown files.`);
+```
+
+Python:
+
+```python
+from pathlib import Path
+
+markdown_files = sorted(Path(".").glob("*.md"))
+
+for file_path in markdown_files:
+    print(f"{file_path.name}: {file_path.stat().st_size} bytes")
+```
+
+Java:
+
+```java
+import java.nio.file.Path;
+import java.util.List;
+
+public class PreviewQueue {
+    private final List<Path> files;
+
+    public PreviewQueue(List<Path> files) {
+        this.files = files;
+    }
+
+    public int size() {
+        return files.size();
+    }
+}
+```
+
+Rust:
+
+```rust
+fn render_status(file: &str, ready: bool) -> String {
+    match ready {
+        true => format!("{file} is ready"),
+        false => format!("{file} is loading"),
+    }
+}
+
+fn main() {
+    println!("{}", render_status("example.md", true));
+}
+```
+
+Go:
+
+```go
+package main
+
+import "fmt"
+
+func renderStatus(file string, ready bool) string {
+	if ready {
+		return fmt.Sprintf("%s is ready", file)
+	}
+
+	return fmt.Sprintf("%s is loading", file)
+}
+```
+
 ## Allowed HTML
 
 <details>

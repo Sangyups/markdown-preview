@@ -28,4 +28,21 @@ describe("preview styles", () => {
         expect(previewCss).toContain(".markdown-body details > summary");
         expect(previewCss).toContain("cursor: pointer");
     });
+
+    test("styles syntax highlight token classes", () => {
+        expect(previewCss).toContain(".markdown-body .hljs-keyword");
+        expect(previewCss).toContain(".markdown-body .hljs-string");
+        expect(previewCss).toContain(".markdown-body .hljs-number");
+    });
+
+    test("uses light theme defaults for code blocks", () => {
+        expect(previewCss).toContain("--preview-code-background: #f6f8fa;");
+        expect(previewCss).toContain("--preview-code-foreground: #24292f;");
+        expect(previewCss).toContain(
+            "background: var(--preview-code-background)"
+        );
+        expect(previewCss).toContain("color: var(--preview-code-foreground)");
+        expect(previewCss).not.toContain("background: #1b1f1d;");
+        expect(previewCss).not.toContain("color: #edf1ed;");
+    });
 });

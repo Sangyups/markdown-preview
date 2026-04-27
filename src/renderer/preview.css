@@ -60,25 +60,6 @@ body {
     word-break: break-all;
 }
 
-.status {
-    border: 1px solid transparent;
-    border-radius: 14px;
-    margin: 0 0 20px;
-    padding: 12px 16px;
-}
-
-.status--info {
-    background: rgba(255, 255, 255, 0.72);
-    border-color: rgba(103, 111, 104, 0.12);
-    color: #46504a;
-}
-
-.status--error {
-    background: rgba(150, 40, 40, 0.08);
-    border-color: rgba(150, 40, 40, 0.16);
-    color: #8e2626;
-}
-
 .preview {
     background: rgba(255, 255, 255, 0.78);
     border: 1px solid rgba(88, 96, 90, 0.12);

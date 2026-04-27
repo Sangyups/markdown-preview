@@ -30,7 +30,6 @@ afterEach(() => {
 function createPreviewDocument() {
     const fileNameElement = { textContent: "" };
     const filePathElement = { textContent: "" };
-    const statusElement = { className: "", textContent: "" };
     const previewElement = {
         innerHTML: "",
         querySelectorAll: () => [],
@@ -48,8 +47,6 @@ function createPreviewDocument() {
                     return fileNameElement;
                 case "file-path":
                     return filePathElement;
-                case "status":
-                    return statusElement;
                 case "preview":
                     return previewElement;
                 default:
@@ -64,19 +61,13 @@ function createPreviewDocument() {
         fileNameElement,
         filePathElement,
         previewElement,
-        statusElement,
     };
 }
 
 describe("renderPreview", () => {
     test("applies configured preview typography to the document root", async () => {
-        const {
-            document,
-            fileNameElement,
-            filePathElement,
-            previewElement,
-            statusElement,
-        } = createPreviewDocument();
+        const { document, fileNameElement, filePathElement, previewElement } =
+            createPreviewDocument();
         globalThis.document = document;
 
         const { renderPreview } = await import(
@@ -103,8 +94,6 @@ describe("renderPreview", () => {
         expect(document.title).toBe("README.md · Markdown Preview");
         expect(fileNameElement.textContent).toBe("README.md");
         expect(filePathElement.textContent).toBe("/tmp/README.md");
-        expect(statusElement.textContent).toBe("Watching for file changes.");
-        expect(statusElement.className).toBe("status status--info");
         expect(previewElement.innerHTML).toBe("<h1>Preview</h1>");
         expect(setProperty).toHaveBeenCalledWith(
             "--preview-font-family",

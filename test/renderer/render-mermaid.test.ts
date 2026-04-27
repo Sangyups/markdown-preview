@@ -79,7 +79,9 @@ describe("renderMermaidBlocks", () => {
         expect(render).toHaveBeenCalledTimes(1);
         expect(render.mock.calls[0]?.[0]).toStartWith("mermaid-");
         expect(render.mock.calls[0]?.[1]).toBe("graph TD;A-->B;");
-        expect(diagramContainer.innerHTML).toBe("<svg><text>diagram</text></svg>");
+        expect(diagramContainer.innerHTML).toBe(
+            "<svg><text>diagram</text></svg>"
+        );
         expect(svgElement.style.width).toBe("100%");
         expect(svgElement.style.maxWidth).toBe("480px");
         expect(svgElement.style.height).toBe("auto");

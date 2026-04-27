@@ -16,4 +16,11 @@ describe("preview styles", () => {
     test("does not override Mermaid's own width calculation", () => {
         expect(previewCss).not.toContain("width: auto;");
     });
+
+    test("keeps images inside the preview width", () => {
+        expect(previewCss).toContain(".markdown-body img");
+        expect(previewCss).toContain("display: block");
+        expect(previewCss).toContain("height: auto");
+        expect(previewCss).toContain("max-width: 100%");
+    });
 });

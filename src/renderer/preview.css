@@ -116,6 +116,13 @@ body {
     color: #0f6b79;
 }
 
+.markdown-body img {
+    display: block;
+    height: auto;
+    margin: 0 0 1rem;
+    max-width: 100%;
+}
+
 .markdown-body code,
 .markdown-body pre {
     font-family: var(--preview-monospace-font-family);

@@ -42,6 +42,58 @@ describe("renderMarkdown", () => {
         expect(html).toContain("<kbd>Cmd</kbd>");
     });
 
+    test("renders common safe inline html tags with constrained attributes", () => {
+        const html = renderMarkdown(
+            [
+                "Inline <strong>bold</strong>, <i>italic</i>, <u>under</u>,",
+                "<s>old</s>, <del>gone</del>, <mark>hit</mark>,",
+                "<small>fine</small>, <code>x</code>, <samp>out</samp>,",
+                "<var>n</var>, <cite>Book</cite>, <q>quote</q>,",
+                '<span>plain</span>, <abbr title="HyperText Markup Language">HTML</abbr>,',
+                '<a href="#section" title="Jump">Jump</a>, and <a href="docs/page.md">Relative</a>.',
+            ].join(" ")
+        );
+
+        expect(html).toContain("<strong>bold</strong>");
+        expect(html).toContain("<i>italic</i>");
+        expect(html).toContain("<u>under</u>");
+        expect(html).toContain("<s>old</s>");
+        expect(html).toContain("<del>gone</del>");
+        expect(html).toContain("<mark>hit</mark>");
+        expect(html).toContain("<small>fine</small>");
+        expect(html).toContain("<code>x</code>");
+        expect(html).toContain("<samp>out</samp>");
+        expect(html).toContain("<var>n</var>");
+        expect(html).toContain("<cite>Book</cite>");
+        expect(html).toContain("<q>quote</q>");
+        expect(html).toContain("<span>plain</span>");
+        expect(html).toContain(
+            '<abbr title="HyperText Markup Language">HTML</abbr>'
+        );
+        expect(html).toContain('<a href="#section" title="Jump">Jump</a>');
+        expect(html).toContain('<a href="docs/page.md">Relative</a>');
+    });
+
+    test("keeps unsafe inline html attributes escaped", () => {
+        const html = renderMarkdown(
+            [
+                '<a href="javascript:alert(1)" onclick="alert(1)">bad</a>',
+                '<strong onclick="alert(1)">bad</strong>',
+                '<abbr title="HTML" onclick="alert(1)">HTML</abbr>',
+            ].join(" ")
+        );
+
+        expect(html).toContain(
+            "&lt;a href=&quot;javascript:alert(1)&quot; onclick=&quot;alert(1)&quot;&gt;bad&lt;/a&gt;"
+        );
+        expect(html).toContain(
+            "&lt;strong onclick=&quot;alert(1)&quot;&gt;bad&lt;/strong&gt;"
+        );
+        expect(html).toContain(
+            "&lt;abbr title=&quot;HTML&quot; onclick=&quot;alert(1)&quot;&gt;HTML&lt;/abbr&gt;"
+        );
+    });
+
     test("renders safe disclosure tags while keeping other html escaped", () => {
         const html = renderMarkdown(
             "<details><summary>More</summary>Body</details>\n\nPlaceholder: <serverId>"
@@ -51,6 +103,117 @@ describe("renderMarkdown", () => {
         expect(html).toContain("<summary>More</summary>");
         expect(html).toContain("Body</details>");
         expect(html).toContain("&lt;serverId&gt;");
+    });
+
+    test("renders disclosure summaries with safe inline formatting", () => {
+        const html = renderMarkdown(
+            "<details>\n<summary><b>NVIDIA NIM</b> (40 req/min free, recommended)</summary>\n\nBody\n\n</details>"
+        );
+
+        expect(html).toContain("<details>");
+        expect(html).toContain(
+            "<summary><b>NVIDIA NIM</b> (40 req/min free, recommended)</summary>"
+        );
+        expect(html).toContain("<p>Body</p>");
+        expect(html).toContain("</details>");
+    });
+
+    test("renders safe div tags with a constrained align attribute", () => {
+        const html = renderMarkdown(
+            '<div align="center">\n\n# Centered Title\n\n</div>'
+        );
+
+        expect(html).toContain('<div align="center">');
+        expect(html).toContain("<h1>Centered Title</h1>");
+        expect(html).toContain("</div>");
+    });
+
+    test("renders safe centered div blocks with image captions", () => {
+        const html = renderMarkdown(
+            '<div align="center">\n  <img src="pic.png" alt="Free Claude Code in action" width="700">\n  <p><em>Claude Code running via NVIDIA NIM, completely free</em></p>\n</div>'
+        );
+
+        expect(html).toContain('<div align="center">');
+        expect(html).toContain(
+            '<img src="pic.png" alt="Free Claude Code in action" width="700">'
+        );
+        expect(html).toContain(
+            "<p><em>Claude Code running via NVIDIA NIM, completely free</em></p>"
+        );
+        expect(html).toContain("</div>");
+    });
+
+    test("renders common safe block html tags", () => {
+        const html = renderMarkdown(
+            [
+                "<section>",
+                "<figure>",
+                "<figcaption><strong>Caption</strong></figcaption>",
+                "</figure>",
+                "</section>",
+                "<blockquote><p>Quote</p></blockquote>",
+                "<hr>",
+                "<pre><code>const value = 1;</code></pre>",
+                "<ul><li>One</li></ul>",
+                "<ol><li>Two</li></ol>",
+                "<center>Centered</center>",
+                "<h2>Raw Heading</h2>",
+            ].join("\n")
+        );
+
+        expect(html).toContain("<section>");
+        expect(html).toContain("<figure>");
+        expect(html).toContain(
+            "<figcaption><strong>Caption</strong></figcaption>"
+        );
+        expect(html).toContain("<blockquote><p>Quote</p></blockquote>");
+        expect(html).toContain("<hr>");
+        expect(html).toContain("<pre><code>const value = 1;</code></pre>");
+        expect(html).toContain("<ul><li>One</li></ul>");
+        expect(html).toContain("<ol><li>Two</li></ol>");
+        expect(html).toContain("<center>Centered</center>");
+        expect(html).toContain("<h2>Raw Heading</h2>");
+    });
+
+    test("renders safe raw html table structure with constrained cell attributes", () => {
+        const html = renderMarkdown(
+            [
+                "<table>",
+                "<caption>Scores</caption>",
+                '<thead><tr><th align="left" colspan="2">Name</th></tr></thead>',
+                '<tbody><tr><td rowspan="2">A</td><td align="right">1</td></tr></tbody>',
+                '<tfoot><tr><td colspan="2">Total</td></tr></tfoot>',
+                "</table>",
+            ].join("\n")
+        );
+
+        expect(html).toContain("<table>");
+        expect(html).toContain("<caption>Scores</caption>");
+        expect(html).toContain('<th align="left" colspan="2">Name</th>');
+        expect(html).toContain('<td rowspan="2">A</td>');
+        expect(html).toContain('<td align="right">1</td>');
+        expect(html).toContain('<td colspan="2">Total</td>');
+        expect(html).toContain("</table>");
+    });
+
+    test("keeps unsafe raw html table attributes escaped", () => {
+        const html = renderMarkdown(
+            '<table style="width:100%"><tr><td colspan="0" onclick="alert(1)">Bad</td></tr></table>'
+        );
+
+        expect(html).toContain(
+            "&lt;table style=&quot;width:100%&quot;&gt;&lt;tr&gt;&lt;td colspan=&quot;0&quot; onclick=&quot;alert(1)&quot;&gt;Bad&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;"
+        );
+    });
+
+    test("keeps unsafe div tags escaped", () => {
+        const html = renderMarkdown(
+            '<div align="center" onclick="alert(1)">Unsafe</div>'
+        );
+
+        expect(html).toContain(
+            "&lt;div align=&quot;center&quot; onclick=&quot;alert(1)&quot;&gt;Unsafe&lt;/div&gt;"
+        );
     });
 
     test("renders safe image tags with a constrained attribute allowlist", () => {

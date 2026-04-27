@@ -184,11 +184,25 @@ rule을 추가합니다.
 
 | 범위 | 태그 |
 | --- | --- |
-| inline | `br`, `img`, `kbd`, `sub`, `sup`, `summary` |
-| block | `details`와 inline allowlist 전체 |
+| inline | `a`, `abbr`, `b`, `br`, `cite`, `code`, `del`, `em`, `i`, `img`, `kbd`, `mark`, `q`, `s`, `samp`, `small`, `span`, `strong`, `sub`, `sup`, `summary`, `u`, `var` |
+| block | `blockquote`, `caption`, `center`, `details`, `div`, `figcaption`, `figure`, `h1`-`h6`, `hr`, `li`, `ol`, `p`, `pre`, `section`, `table`, `tbody`, `td`, `tfoot`, `th`, `thead`, `tr`, `ul`, inline allowlist 전체 |
 
 `img`는 `src`, `alt`, `title`, `width`, `height`만 허용합니다. `src`는 `http://`,
-`https://`, `file://`만 허용합니다.
+`https://`, `file://`, 상대 경로를 허용합니다.
+
+`a`는 safe `href`가 필수이며 `http://`, `https://`, `mailto:`, anchor, 상대
+경로만 허용합니다. `title`은 선택적으로 허용합니다.
+
+`abbr`은 선택적으로 `title`만 허용합니다.
+
+`div`는 attribute 없이 쓰거나 `align="left|center|right"`만 허용합니다.
+
+`details`는 attribute 없이 쓰거나 `open`만 허용합니다.
+
+`td`와 `th`는 `align="left|center|right"`, 양의 정수 `colspan`, 양의 정수
+`rowspan`만 허용합니다.
+
+그 외 허용 태그는 attribute 없이만 허용합니다.
 
 ## Mermaid 렌더링 경계
 

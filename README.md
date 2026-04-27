@@ -140,8 +140,9 @@ configured theme for that launch only.
 - Tables with horizontal scrolling
 - Footnotes through standard `[^1]` and `^[inline]` syntax
 - `mermaid` fenced code blocks
-- A small raw HTML allowlist for practical Markdown authoring, including
-  `br`, `img`, `kbd`, `sub`, `sup`, `summary`, and `details`
+- A conservative raw HTML allowlist for practical Markdown authoring, covering
+  common inline formatting, disclosure blocks, simple layout tags, and table
+  structure
 
 Unsupported raw HTML is escaped so the document remains readable instead of
 breaking the preview.

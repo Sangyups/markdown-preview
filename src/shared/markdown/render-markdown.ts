@@ -28,6 +28,23 @@ type MarkdownRenderer = {
     ) => string;
 };
 
+type ParsedHtmlTag = {
+    attributes: string;
+    isClosingTag: boolean;
+    isSelfClosingTag: boolean;
+    tagName: string;
+};
+
+type RawHtmlState = {
+    unsafeInlineTagStack: string[];
+};
+
+const rawHtmlStateKey = "__markdownPreviewRawHtmlState";
+
+type RawHtmlEnv = {
+    [rawHtmlStateKey]?: RawHtmlState;
+};
+
 const markdown = new MarkdownIt({
     html: true,
     highlight: highlightCode,
@@ -35,15 +52,68 @@ const markdown = new MarkdownIt({
     typographer: false,
 }).use(markdownItFootnote);
 
-const allowedInlineHtmlTags = new Set([
-    "br",
-    "img",
+const noAttributeInlineHtmlTags = new Set([
+    "b",
+    "cite",
+    "code",
+    "del",
+    "em",
+    "i",
     "kbd",
+    "mark",
+    "q",
+    "s",
+    "samp",
+    "small",
+    "span",
+    "strong",
     "sub",
     "sup",
     "summary",
+    "u",
+    "var",
 ]);
-const allowedBlockHtmlTags = new Set(["details", ...allowedInlineHtmlTags]);
+const noAttributeBlockHtmlTags = new Set([
+    "blockquote",
+    "caption",
+    "center",
+    "figcaption",
+    "figure",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "li",
+    "ol",
+    "p",
+    "pre",
+    "section",
+    "table",
+    "tbody",
+    "tfoot",
+    "thead",
+    "tr",
+    "ul",
+]);
+const tableCellHtmlTags = new Set(["td", "th"]);
+const allowedInlineHtmlTags = new Set([
+    "a",
+    "abbr",
+    "br",
+    "img",
+    ...noAttributeInlineHtmlTags,
+]);
+const allowedBlockHtmlTags = new Set([
+    "details",
+    "div",
+    "hr",
+    "p",
+    ...noAttributeBlockHtmlTags,
+    ...tableCellHtmlTags,
+    ...allowedInlineHtmlTags,
+]);
 
 const renderFence = markdown.renderer.rules.fence?.bind(
     markdown.renderer.rules
@@ -141,13 +211,29 @@ markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
 };
 
 markdown.renderer.rules.html_inline = (tokens, index, options, env, self) => {
-    const renderedHtml = renderAllowedRawHtml(
-        tokens[index].content,
-        allowedInlineHtmlTags
-    );
+    const rawHtml = tokens[index].content;
+    const parsedTag = parseHtmlTag(rawHtml);
+
+    if (
+        parsedTag?.isClosingTag &&
+        shouldEscapeUnsafeInlineClosingTag(env, parsedTag.tagName)
+    ) {
+        return markdown.utils.escapeHtml(
+            renderHtmlInline(tokens, index, options, env, self)
+        );
+    }
+
+    const renderedHtml = renderAllowedRawHtml(rawHtml, allowedInlineHtmlTags);
 
     if (renderedHtml !== null) {
         return renderedHtml;
+    }
+
+    if (
+        parsedTag &&
+        shouldTrackUnsafeInlineOpeningTag(parsedTag, allowedInlineHtmlTags)
+    ) {
+        rememberUnsafeInlineOpeningTag(env, parsedTag.tagName);
     }
 
     return markdown.utils.escapeHtml(
@@ -279,22 +365,13 @@ function normalizeAllowedHtmlTag(
     rawTag: string,
     allowedTags: ReadonlySet<string>
 ) {
-    const matchedTag = rawTag.match(
-        /^<\s*(\/?)\s*([A-Za-z][\w:-]*)\s*([^>]*)>$/
-    );
+    const parsedTag = parseHtmlTag(rawTag);
 
-    if (!matchedTag) {
+    if (!parsedTag) {
         return null;
     }
 
-    const [, closingSlash, rawTagName, rawAttributes] = matchedTag;
-    const tagName = rawTagName.toLowerCase();
-    const isClosingTag = closingSlash === "/";
-    const trimmedAttributes = rawAttributes.trim();
-    const isSelfClosingTag = trimmedAttributes.endsWith("/");
-    const attributes = isSelfClosingTag
-        ? trimmedAttributes.slice(0, -1).trim()
-        : trimmedAttributes;
+    const { attributes, isClosingTag, isSelfClosingTag, tagName } = parsedTag;
 
     if (!allowedTags.has(tagName)) {
         return null;
@@ -306,6 +383,14 @@ function normalizeAllowedHtmlTag(
         }
 
         return "<br>";
+    }
+
+    if (tagName === "hr") {
+        if (isClosingTag || attributes.length > 0) {
+            return null;
+        }
+
+        return "<hr>";
     }
 
     if (tagName === "img") {
@@ -328,6 +413,14 @@ function normalizeAllowedHtmlTag(
         return `</${tagName}>`;
     }
 
+    if (tagName === "a") {
+        return normalizeAnchorHtmlTag(attributes);
+    }
+
+    if (tagName === "abbr") {
+        return normalizeTitleOnlyHtmlTag("abbr", attributes);
+    }
+
     if (tagName === "details") {
         if (attributes.length === 0) {
             return "<details>";
@@ -340,11 +433,261 @@ function normalizeAllowedHtmlTag(
         return null;
     }
 
-    if (attributes.length > 0) {
+    if (tagName === "div") {
+        return normalizeDivHtmlTag(attributes);
+    }
+
+    if (tableCellHtmlTags.has(tagName)) {
+        return normalizeTableCellHtmlTag(tagName, attributes);
+    }
+
+    if (
+        attributes.length > 0 ||
+        (!noAttributeInlineHtmlTags.has(tagName) &&
+            !noAttributeBlockHtmlTags.has(tagName))
+    ) {
         return null;
     }
 
     return `<${tagName}>`;
+}
+
+function parseHtmlTag(rawTag: string): ParsedHtmlTag | null {
+    const matchedTag = rawTag.match(
+        /^<\s*(\/?)\s*([A-Za-z][\w:-]*)\s*([^>]*)>$/
+    );
+
+    if (!matchedTag) {
+        return null;
+    }
+
+    const [, closingSlash, rawTagName, rawAttributes] = matchedTag;
+    const trimmedAttributes = rawAttributes.trim();
+    const isSelfClosingTag = trimmedAttributes.endsWith("/");
+    const attributes = isSelfClosingTag
+        ? trimmedAttributes.slice(0, -1).trim()
+        : trimmedAttributes;
+
+    return {
+        attributes,
+        isClosingTag: closingSlash === "/",
+        isSelfClosingTag,
+        tagName: rawTagName.toLowerCase(),
+    };
+}
+
+function shouldTrackUnsafeInlineOpeningTag(
+    parsedTag: ParsedHtmlTag,
+    allowedTags: ReadonlySet<string>
+) {
+    return (
+        allowedTags.has(parsedTag.tagName) &&
+        !parsedTag.isClosingTag &&
+        !parsedTag.isSelfClosingTag &&
+        parsedTag.tagName !== "br" &&
+        parsedTag.tagName !== "img"
+    );
+}
+
+function rememberUnsafeInlineOpeningTag(env: unknown, tagName: string) {
+    const state = getRawHtmlState(env);
+
+    if (!state) {
+        return;
+    }
+
+    state.unsafeInlineTagStack.push(tagName);
+}
+
+function shouldEscapeUnsafeInlineClosingTag(env: unknown, tagName: string) {
+    const state = getRawHtmlState(env);
+
+    if (!state) {
+        return false;
+    }
+
+    const unsafeTagIndex = state.unsafeInlineTagStack.lastIndexOf(tagName);
+
+    if (unsafeTagIndex === -1) {
+        return false;
+    }
+
+    state.unsafeInlineTagStack.splice(unsafeTagIndex, 1);
+    return true;
+}
+
+function getRawHtmlState(env: unknown): RawHtmlState | null {
+    if (!env || typeof env !== "object") {
+        return null;
+    }
+
+    const rawHtmlEnv = env as RawHtmlEnv;
+
+    rawHtmlEnv[rawHtmlStateKey] ??= {
+        unsafeInlineTagStack: [],
+    };
+
+    return rawHtmlEnv[rawHtmlStateKey];
+}
+
+function normalizeAnchorHtmlTag(rawAttributes: string) {
+    const attributes = parseHtmlAttributes(rawAttributes);
+
+    if (!attributes) {
+        return null;
+    }
+
+    const normalizedAttributes: string[] = [];
+    const attributeNames = new Set<string>();
+
+    for (const [name, value] of attributes) {
+        if (attributeNames.has(name)) {
+            return null;
+        }
+
+        attributeNames.add(name);
+
+        if (name === "href") {
+            if (!isSafeLinkHref(value)) {
+                return null;
+            }
+
+            normalizedAttributes.push(`href="${escapeHtmlAttribute(value)}"`);
+            continue;
+        }
+
+        if (name === "title") {
+            normalizedAttributes.push(`title="${escapeHtmlAttribute(value)}"`);
+            continue;
+        }
+
+        return null;
+    }
+
+    if (!attributeNames.has("href")) {
+        return null;
+    }
+
+    return `<a ${normalizedAttributes.join(" ")}>`;
+}
+
+function normalizeTitleOnlyHtmlTag(tagName: string, rawAttributes: string) {
+    if (rawAttributes.length === 0) {
+        return `<${tagName}>`;
+    }
+
+    const attributes = parseHtmlAttributes(rawAttributes);
+
+    if (!attributes) {
+        return null;
+    }
+
+    const attributeNames = new Set<string>();
+    let title: string | null = null;
+
+    for (const [name, value] of attributes) {
+        if (attributeNames.has(name)) {
+            return null;
+        }
+
+        attributeNames.add(name);
+
+        if (name !== "title") {
+            return null;
+        }
+
+        title = value;
+    }
+
+    return title === null
+        ? `<${tagName}>`
+        : `<${tagName} title="${escapeHtmlAttribute(title)}">`;
+}
+
+function normalizeDivHtmlTag(rawAttributes: string) {
+    if (rawAttributes.length === 0) {
+        return "<div>";
+    }
+
+    const attributes = parseHtmlAttributes(rawAttributes);
+
+    if (!attributes) {
+        return null;
+    }
+
+    const attributeNames = new Set<string>();
+    let alignValue: string | null = null;
+
+    for (const [name, value] of attributes) {
+        if (attributeNames.has(name)) {
+            return null;
+        }
+
+        attributeNames.add(name);
+
+        if (name !== "align") {
+            return null;
+        }
+
+        const normalizedValue = value.toLowerCase();
+
+        if (!["center", "left", "right"].includes(normalizedValue)) {
+            return null;
+        }
+
+        alignValue = normalizedValue;
+    }
+
+    return alignValue ? `<div align="${alignValue}">` : "<div>";
+}
+
+function normalizeTableCellHtmlTag(tagName: string, rawAttributes: string) {
+    if (rawAttributes.length === 0) {
+        return `<${tagName}>`;
+    }
+
+    const attributes = parseHtmlAttributes(rawAttributes);
+
+    if (!attributes) {
+        return null;
+    }
+
+    const normalizedAttributes: string[] = [];
+    const attributeNames = new Set<string>();
+
+    for (const [name, value] of attributes) {
+        if (attributeNames.has(name)) {
+            return null;
+        }
+
+        attributeNames.add(name);
+
+        if (name === "align") {
+            const normalizedValue = value.toLowerCase();
+
+            if (!["center", "left", "right"].includes(normalizedValue)) {
+                return null;
+            }
+
+            normalizedAttributes.push(`align="${normalizedValue}"`);
+            continue;
+        }
+
+        if (name === "colspan" || name === "rowspan") {
+            if (!/^[1-9]\d*$/.test(value)) {
+                return null;
+            }
+
+            normalizedAttributes.push(`${name}="${value}"`);
+            continue;
+        }
+
+        return null;
+    }
+
+    return normalizedAttributes.length > 0
+        ? `<${tagName} ${normalizedAttributes.join(" ")}>`
+        : `<${tagName}>`;
 }
 
 function normalizeImageHtmlTag(rawAttributes: string) {
@@ -440,7 +783,27 @@ function parseHtmlAttributes(rawAttributes: string) {
 }
 
 function isSafeImageSource(src: string) {
-    return /^(https?:\/\/|file:\/\/)/i.test(src);
+    if (/^(https?:\/\/|file:\/\/)/i.test(src)) {
+        return true;
+    }
+
+    if (src.length === 0 || src.startsWith("//")) {
+        return false;
+    }
+
+    return !/^[A-Za-z][A-Za-z0-9+.-]*:/i.test(src);
+}
+
+function isSafeLinkHref(href: string) {
+    if (href.length === 0 || href.startsWith("//")) {
+        return false;
+    }
+
+    if (/^(https?:\/\/|mailto:)/i.test(href)) {
+        return true;
+    }
+
+    return !/^[A-Za-z][A-Za-z0-9+.-]*:/i.test(href);
 }
 
 function findFirstInlineTokenInListItem(

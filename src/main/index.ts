@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { app } from "electron";
+import { app, nativeTheme } from "electron";
 import {
     type AppConfig,
     loadAppConfig,
     toCssFontFamilyValue,
+    toElectronThemeSource,
 } from "../shared/config";
 import { renderMarkdown } from "../shared/markdown/render-markdown";
 import type { PreviewPayload } from "../shared/types";
@@ -26,7 +27,13 @@ async function bootstrap() {
     await app.whenReady();
 
     const appConfig = await loadAppConfig();
-    const previewWindow = createWindow(path.basename(targetPath), appConfig);
+    nativeTheme.themeSource = toElectronThemeSource(appConfig.theme);
+
+    const previewWindow = createWindow(
+        path.basename(targetPath),
+        appConfig,
+        nativeTheme.shouldUseDarkColors
+    );
     let currentPreview = await buildPreviewPayload(targetPath, appConfig);
 
     const unregisterPreviewIpc = registerPreviewIpc(() => currentPreview);

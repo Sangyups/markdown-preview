@@ -5,7 +5,8 @@ import { resolveRuntimePath } from "../shared/runtime-path";
 
 export function createWindow(
     fileName: string,
-    windowConfig: Pick<AppConfig, "height" | "width"> = DEFAULT_APP_CONFIG
+    windowConfig: Pick<AppConfig, "height" | "width"> = DEFAULT_APP_CONFIG,
+    shouldUseDarkColors = false
 ) {
     const preloadPath = resolveRuntimePath(process.argv, "../preload/index.js");
     const rendererHtmlPath = resolveRuntimePath(
@@ -14,7 +15,7 @@ export function createWindow(
     );
 
     const previewWindow = new BrowserWindow({
-        backgroundColor: "#f7f7f3",
+        backgroundColor: resolveWindowBackgroundColor(shouldUseDarkColors),
         height: windowConfig.height,
         show: false,
         title: `${fileName} · Markdown Preview`,
@@ -49,6 +50,10 @@ export function createWindow(
     void previewWindow.loadFile(rendererHtmlPath);
 
     return previewWindow;
+}
+
+export function resolveWindowBackgroundColor(shouldUseDarkColors: boolean) {
+    return shouldUseDarkColors ? "#111614" : "#f7f7f3";
 }
 
 function isSafeExternalUrl(url: string) {

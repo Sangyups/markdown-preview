@@ -51,4 +51,11 @@ describe("preview styles", () => {
         expect(previewCss).not.toContain("background: #1b1f1d;");
         expect(previewCss).not.toContain("color: #edf1ed;");
     });
+
+    test("declares dark theme tokens behind the system color scheme media query", () => {
+        expect(previewCss).toContain("@media (prefers-color-scheme: dark)");
+        expect(previewCss).toContain("color-scheme: dark");
+        expect(previewCss).toContain("--preview-code-background: #151b18;");
+        expect(previewCss).toContain("--preview-code-foreground: #d9e1dc;");
+    });
 });

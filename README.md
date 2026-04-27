@@ -27,8 +27,8 @@ source file remains wherever you want to edit it.
 - **Live reload on save** - the preview updates when the target file changes.
 - **Mermaid included** - fenced `mermaid` blocks render as diagrams without a
   separate browser setup.
-- **Readable defaults, local preferences** - configure font stacks, font sizes,
-  and window dimensions in a small TOML file.
+- **Readable defaults, local preferences** - configure theme, font stacks, font
+  sizes, and window dimensions in a small TOML file.
 - **Conservative renderer boundary** - the renderer gets a limited API surface,
   external links open outside the preview, and unsupported raw HTML is escaped.
 
@@ -112,11 +112,13 @@ font-family = ["Apple SD Gothic Neo", "Avenir Next", "Segoe UI", "sans-serif"]
 font-size = 16
 monospace-font-family = ["SFMono-Regular", "JetBrains Mono", "monospace"]
 monospace-font-size = 16
+theme = "auto"
 width = 1560
 height = 1560
 ```
 
-Invalid or missing values fall back to the built-in defaults.
+`theme` accepts `auto`, `light`, or `dark`. `auto` follows the operating system
+theme. Invalid or missing values fall back to the built-in defaults.
 
 ## What It Renders
 
@@ -145,8 +147,8 @@ expects that built entrypoint to exist.
 `markdown-preview` is intentionally preview-only. It does not edit files, manage
 tabs, restore sessions, or emulate the full VS Code extension environment.
 
-Planned extension points include relative image/link handling, themes, file glob
-options, and richer window reuse behavior.
+Planned extension points include relative image/link handling, file glob options,
+and richer window reuse behavior.
 
 ## Remove The Local CLI Link
 

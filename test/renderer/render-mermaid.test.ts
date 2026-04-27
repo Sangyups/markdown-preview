@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { encodeMermaidSource } from "../../src/shared/markdown/extract-mermaid-blocks";
 
@@ -7,6 +7,7 @@ const render = mock(async () => ({
     bindFunctions: undefined,
     svg: "<svg></svg>",
 }));
+const originalMatchMedia = globalThis.matchMedia;
 
 beforeEach(() => {
     initialize.mockClear();
@@ -19,7 +20,35 @@ beforeEach(() => {
     }));
 });
 
+afterEach(() => {
+    globalThis.matchMedia = originalMatchMedia;
+});
+
 describe("renderMermaidBlocks", () => {
+    test("initializes Mermaid with the dark theme when dark colors are active", async () => {
+        globalThis.matchMedia = mock((query: string) => ({
+            matches: query === "(prefers-color-scheme: dark)",
+        })) as unknown as typeof globalThis.matchMedia;
+
+        const rootElement = {
+            querySelectorAll() {
+                return [];
+            },
+        } as unknown as ParentNode;
+
+        const { renderMermaidBlocks } = await import(
+            "../../src/renderer/render-mermaid"
+        );
+
+        await renderMermaidBlocks(rootElement);
+
+        expect(initialize).toHaveBeenCalledWith(
+            expect.objectContaining({
+                theme: "dark",
+            })
+        );
+    });
+
     test("renders Mermaid diagrams and clears previous errors on success", async () => {
         const bindFunctions = mock(() => undefined);
         const svgElement = {

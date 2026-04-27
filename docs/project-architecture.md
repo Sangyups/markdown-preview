@@ -212,6 +212,7 @@ Mermaid source는 Markdown 변환 단계에서 placeholder의 `data-mermaid-sour
 | `font-size` | renderer CSS 변수 |
 | `monospace-font-family` | renderer CSS 변수 |
 | `monospace-font-size` | renderer CSS 변수 |
+| `theme` | Electron `nativeTheme.themeSource`와 renderer color scheme |
 | `width` | `BrowserWindow` width |
 | `height` | `BrowserWindow` height |
 

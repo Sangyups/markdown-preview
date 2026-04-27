@@ -5,6 +5,30 @@
     --preview-monospace-font-family:
         "SFMono-Regular", "JetBrains Mono", monospace;
     --preview-monospace-font-size: 16px;
+    --preview-foreground: #1f2521;
+    --preview-background:
+        radial-gradient(
+            circle at top left,
+            rgba(229, 224, 203, 0.9),
+            transparent 38%
+        ),
+        linear-gradient(180deg, #f7f7f3 0%, #ece9de 100%);
+    --preview-kicker: #6e746d;
+    --preview-path: #5a615c;
+    --preview-panel-background: rgba(255, 255, 255, 0.78);
+    --preview-panel-border: rgba(88, 96, 90, 0.12);
+    --preview-panel-shadow: rgba(75, 82, 74, 0.08);
+    --preview-link: #0f6b79;
+    --preview-inline-code-background: rgba(15, 33, 26, 0.08);
+    --preview-blockquote-border: rgba(83, 92, 84, 0.25);
+    --preview-blockquote-foreground: #56605a;
+    --preview-table-border: rgba(84, 91, 86, 0.18);
+    --preview-table-header-background: rgba(240, 241, 236, 0.9);
+    --preview-mermaid-background: rgba(246, 243, 234, 0.88);
+    --preview-mermaid-border: rgba(111, 105, 85, 0.16);
+    --preview-error-background: rgba(150, 40, 40, 0.08);
+    --preview-error-border: rgba(150, 40, 40, 0.15);
+    --preview-error-foreground: #8e2626;
     --preview-code-background: #f6f8fa;
     --preview-code-border: rgba(84, 91, 86, 0.18);
     --preview-code-foreground: #24292f;
@@ -17,17 +41,48 @@
     --preview-code-muted: #57606a;
     --preview-code-deletion: #82071e;
     --preview-code-addition: #116329;
-    color: #1f2521;
+    color: var(--preview-foreground);
+    color-scheme: light;
     font-family: var(--preview-font-family);
     font-size: var(--preview-font-size);
-    background:
-        radial-gradient(
-            circle at top left,
-            rgba(229, 224, 203, 0.9),
-            transparent 38%
-        ),
-        linear-gradient(180deg, #f7f7f3 0%, #ece9de 100%);
+    background: var(--preview-background);
     line-height: 1.6;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --preview-foreground: #d9e1dc;
+        --preview-background: linear-gradient(180deg, #111614 0%, #1b211e 100%);
+        --preview-kicker: #9aa79f;
+        --preview-path: #aab5ae;
+        --preview-panel-background: rgba(22, 29, 26, 0.86);
+        --preview-panel-border: rgba(190, 205, 196, 0.13);
+        --preview-panel-shadow: rgba(0, 0, 0, 0.28);
+        --preview-link: #65c6d4;
+        --preview-inline-code-background: rgba(210, 228, 218, 0.1);
+        --preview-blockquote-border: rgba(174, 190, 181, 0.28);
+        --preview-blockquote-foreground: #b7c4bc;
+        --preview-table-border: rgba(184, 199, 190, 0.18);
+        --preview-table-header-background: rgba(40, 50, 46, 0.95);
+        --preview-mermaid-background: rgba(23, 30, 27, 0.9);
+        --preview-mermaid-border: rgba(185, 200, 190, 0.15);
+        --preview-error-background: rgba(246, 112, 112, 0.11);
+        --preview-error-border: rgba(246, 112, 112, 0.2);
+        --preview-error-foreground: #ffaaa5;
+        --preview-code-background: #151b18;
+        --preview-code-border: rgba(184, 199, 190, 0.16);
+        --preview-code-foreground: #d9e1dc;
+        --preview-code-comment: #96a39b;
+        --preview-code-keyword: #ff8585;
+        --preview-code-literal: #8dbdff;
+        --preview-code-symbol: #f3b37d;
+        --preview-code-string: #8fd19e;
+        --preview-code-title: #c7a6ff;
+        --preview-code-muted: #a7b3ac;
+        --preview-code-deletion: #ff8c8c;
+        --preview-code-addition: #8fd19e;
+        color-scheme: dark;
+    }
 }
 
 * {
@@ -50,7 +105,7 @@ body {
 }
 
 .app-kicker {
-    color: #6e746d;
+    color: var(--preview-kicker);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.14em;
@@ -66,17 +121,17 @@ body {
 }
 
 .app-path {
-    color: #5a615c;
+    color: var(--preview-path);
     font-size: 14px;
     margin: 10px 0 0;
     word-break: break-all;
 }
 
 .preview {
-    background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(88, 96, 90, 0.12);
+    background: var(--preview-panel-background);
+    border: 1px solid var(--preview-panel-border);
     border-radius: 26px;
-    box-shadow: 0 24px 50px rgba(75, 82, 74, 0.08);
+    box-shadow: 0 24px 50px var(--preview-panel-shadow);
     min-height: 480px;
     overflow: hidden;
     padding: 32px;
@@ -106,7 +161,7 @@ body {
 }
 
 .markdown-body a {
-    color: #0f6b79;
+    color: var(--preview-link);
 }
 
 .markdown-body details > summary {
@@ -136,7 +191,7 @@ body {
 }
 
 .markdown-body :not(pre) > code {
-    background: rgba(15, 33, 26, 0.08);
+    background: var(--preview-inline-code-background);
     border-radius: 6px;
     padding: 0.15em 0.35em;
 }
@@ -209,8 +264,8 @@ body {
 }
 
 .markdown-body blockquote {
-    border-left: 4px solid rgba(83, 92, 84, 0.25);
-    color: #56605a;
+    border-left: 4px solid var(--preview-blockquote-border);
+    color: var(--preview-blockquote-foreground);
     margin-left: 0;
     padding-left: 16px;
 }
@@ -231,7 +286,7 @@ body {
 
 .markdown-body th,
 .markdown-body td {
-    border: 1px solid rgba(84, 91, 86, 0.18);
+    border: 1px solid var(--preview-table-border);
     overflow-wrap: anywhere;
     padding: 10px 12px;
     text-align: left;
@@ -240,7 +295,7 @@ body {
 }
 
 .markdown-body th {
-    background: rgba(240, 241, 236, 0.9);
+    background: var(--preview-table-header-background);
 }
 
 .markdown-body th code,
@@ -250,8 +305,8 @@ body {
 }
 
 .mermaid-block {
-    background: rgba(246, 243, 234, 0.88);
-    border: 1px solid rgba(111, 105, 85, 0.16);
+    background: var(--preview-mermaid-background);
+    border: 1px solid var(--preview-mermaid-border);
     border-radius: 22px;
     margin: 0 0 20px;
     overflow: hidden;
@@ -270,7 +325,7 @@ body {
 }
 
 .mermaid-source {
-    border-top: 1px solid rgba(111, 105, 85, 0.16);
+    border-top: 1px solid var(--preview-mermaid-border);
     display: none;
     margin: 0;
 }
@@ -280,16 +335,16 @@ body {
 }
 
 .mermaid-error {
-    background: rgba(150, 40, 40, 0.08);
-    border-top: 1px solid rgba(150, 40, 40, 0.14);
-    color: #8e2626;
+    background: var(--preview-error-background);
+    border-top: 1px solid var(--preview-error-border);
+    color: var(--preview-error-foreground);
     font-weight: 600;
     padding: 14px 18px;
 }
 
 .preview-error {
-    background: rgba(150, 40, 40, 0.08);
-    border: 1px solid rgba(150, 40, 40, 0.15);
+    background: var(--preview-error-background);
+    border: 1px solid var(--preview-error-border);
     border-radius: 18px;
     padding: 20px 22px;
 }

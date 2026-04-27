@@ -9,9 +9,13 @@ export interface AppConfig {
     fontSize: number;
     monospaceFontFamily: string[];
     monospaceFontSize: number;
+    theme: AppTheme;
     height: number;
     width: number;
 }
+
+export type AppTheme = "auto" | "dark" | "light";
+export type ElectronThemeSource = "dark" | "light" | "system";
 
 export const DEFAULT_APP_CONFIG: AppConfig = {
     fontFamily: [
@@ -24,6 +28,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     height: 1560,
     monospaceFontFamily: ["SFMono-Regular", "JetBrains Mono", "monospace"],
     monospaceFontSize: 16,
+    theme: "auto",
     width: 1560,
 };
 
@@ -78,6 +83,7 @@ function parseAppConfig(configSource: string): AppConfig {
             parsedConfig["monospace-font-size"],
             "monospaceFontSize"
         ),
+        theme: readTheme(parsedConfig.theme),
         height: readPositiveInteger(parsedConfig.height, "height"),
         width: readPositiveInteger(parsedConfig.width, "width"),
     };
@@ -95,10 +101,15 @@ export function serializeAppConfig(appConfig: AppConfig) {
             appConfig.monospaceFontFamily
         )}`,
         `monospace-font-size = ${appConfig.monospaceFontSize}`,
+        `theme = ${toTomlString(appConfig.theme)}`,
         `width = ${appConfig.width}`,
         `height = ${appConfig.height}`,
         "",
     ].join("\n");
+}
+
+export function toElectronThemeSource(appTheme: AppTheme): ElectronThemeSource {
+    return appTheme === "auto" ? "system" : appTheme;
 }
 
 function readFontFamilyStack(value: unknown, fallback: string[]) {
@@ -141,6 +152,16 @@ function readPositiveNumber(
     return typeof value === "number" && Number.isFinite(value) && value > 0
         ? value
         : DEFAULT_APP_CONFIG[key];
+}
+
+function readTheme(value: unknown) {
+    return typeof value === "string" && isAppTheme(value)
+        ? value
+        : DEFAULT_APP_CONFIG.theme;
+}
+
+function isAppTheme(value: string): value is AppTheme {
+    return APP_THEMES.has(value as AppTheme);
 }
 
 function formatFontFamilyName(fontFamilyName: string) {
@@ -209,3 +230,5 @@ const GENERIC_FONT_FAMILIES = new Set([
     "emoji",
     "fangsong",
 ]);
+
+const APP_THEMES = new Set<AppTheme>(["auto", "dark", "light"]);

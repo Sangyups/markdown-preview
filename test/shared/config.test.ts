@@ -9,6 +9,7 @@ import {
     resolveConfigFilePath,
     serializeAppConfig,
     toCssFontFamilyValue,
+    toElectronThemeSource,
 } from "../../src/shared/config";
 
 const tempPaths: string[] = [];
@@ -50,6 +51,7 @@ describe("loadAppConfig", () => {
             'monospace-font-family = ["SFMono-Regular", "JetBrains Mono", "monospace"]'
         );
         expect(writtenConfig).toContain("monospace-font-size = 16");
+        expect(writtenConfig).toContain('theme = "auto"');
         expect(writtenConfig).toContain("width = 1560");
         expect(writtenConfig).toContain("height = 1560");
     });
@@ -66,6 +68,7 @@ describe("loadAppConfig", () => {
                 "font-size = 18",
                 'monospace-font-family = ["Iosevka Term", "monospace"]',
                 "monospace-font-size = 15",
+                'theme = "dark"',
                 "width = 1440",
                 "height = 960",
             ].join("\n")
@@ -79,6 +82,7 @@ describe("loadAppConfig", () => {
             height: 960,
             monospaceFontFamily: ["Iosevka Term", "monospace"],
             monospaceFontSize: 15,
+            theme: "dark",
             width: 1440,
         });
     });
@@ -108,6 +112,7 @@ describe("loadAppConfig", () => {
             height: 960,
             monospaceFontFamily: ["Iosevka Term"],
             monospaceFontSize: 15,
+            theme: "auto",
             width: 1440,
         });
     });
@@ -124,6 +129,7 @@ describe("loadAppConfig", () => {
                 'font-size = "large"',
                 'monospace-font-family = ["", 17]',
                 "monospace-font-size = -1",
+                'theme = "sepia"',
                 "width = -50",
                 "height = 0",
             ].join("\n")
@@ -171,6 +177,17 @@ describe("serializeAppConfig", () => {
         expect(serializeAppConfig(DEFAULT_APP_CONFIG)).toContain(
             'monospace-font-family = ["SFMono-Regular", "JetBrains Mono", "monospace"]'
         );
+        expect(serializeAppConfig(DEFAULT_APP_CONFIG)).toContain(
+            'theme = "auto"'
+        );
+    });
+});
+
+describe("toElectronThemeSource", () => {
+    test("maps preview theme config to Electron nativeTheme sources", () => {
+        expect(toElectronThemeSource("auto")).toBe("system");
+        expect(toElectronThemeSource("light")).toBe("light");
+        expect(toElectronThemeSource("dark")).toBe("dark");
     });
 });
 

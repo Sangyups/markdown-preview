@@ -2,18 +2,13 @@ import mermaid from "mermaid";
 
 import { decodeMermaidSource } from "../shared/markdown/extract-mermaid-blocks";
 
-let initialized = false;
+type MermaidTheme = "dark" | "default";
+
+let activeMermaidTheme: MermaidTheme | null = null;
 let nextDiagramId = 0;
 
 export async function renderMermaidBlocks(rootElement: ParentNode) {
-    if (!initialized) {
-        mermaid.initialize({
-            securityLevel: "strict",
-            startOnLoad: false,
-        });
-
-        initialized = true;
-    }
+    initializeMermaid();
 
     const mermaidBlocks = Array.from(
         rootElement.querySelectorAll<HTMLElement>("[data-mermaid-source]")
@@ -24,6 +19,14 @@ export async function renderMermaidBlocks(rootElement: ParentNode) {
     );
 }
 
+export function resolveMermaidTheme(
+    matchMedia = globalThis.matchMedia
+): MermaidTheme {
+    return matchMedia?.("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "default";
+}
+
 export function normalizeMermaidSvg(diagramContainer: ParentNode) {
     const svgElement = diagramContainer.querySelector<SVGSVGElement>("svg");
 
@@ -32,6 +35,22 @@ export function normalizeMermaidSvg(diagramContainer: ParentNode) {
     }
 
     svgElement.style.height = "auto";
+}
+
+function initializeMermaid() {
+    const mermaidTheme = resolveMermaidTheme();
+
+    if (activeMermaidTheme === mermaidTheme) {
+        return;
+    }
+
+    mermaid.initialize({
+        securityLevel: "strict",
+        startOnLoad: false,
+        theme: mermaidTheme,
+    });
+
+    activeMermaidTheme = mermaidTheme;
 }
 
 async function renderMermaidBlock(mermaidBlock: HTMLElement) {

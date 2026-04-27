@@ -129,6 +129,27 @@ describe("createWindow", () => {
         );
     });
 
+    test("uses a dark window background when dark colors are active", async () => {
+        process.argv = [mockBunExecutablePath, mockMainEntryPath];
+
+        const { createWindow } = await import("../../src/main/create-window");
+
+        createWindow(
+            "README.md",
+            {
+                height: 900,
+                width: 1280,
+            },
+            true
+        );
+
+        expect(BrowserWindow).toHaveBeenCalledWith(
+            expect.objectContaining({
+                backgroundColor: "#111614",
+            })
+        );
+    });
+
     test("blocks in-app navigation and opens safe external urls in the default browser", async () => {
         process.argv = [mockBunExecutablePath, mockMainEntryPath];
 

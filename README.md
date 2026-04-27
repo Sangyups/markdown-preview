@@ -1,29 +1,61 @@
 # Markdown Preview
 
-Electron 기반의 로컬 Markdown 프리뷰 앱이다. 터미널에서 파일 또는 디렉토리를 넘기면 GUI 창을 열고, Markdown과 Mermaid 다이어그램을 렌더한다.
+A focused desktop previewer for people who write Markdown from the terminal.
 
-## 요구사항
+Open a file, keep editing in your favorite editor, and let `markdown-preview`
+hold a clean, live-updating reading window next to it. It renders standard
+Markdown, supports Mermaid diagrams out of the box, and keeps the workflow
+small: choose a file, preview it, save, repeat.
+
+```bash
+mdp ~/notes/architecture.md
+```
+
+## Why It Exists
+
+Most Markdown preview flows are either tied to an editor pane or hidden behind a
+browser tab. `markdown-preview` gives local Markdown its own desktop window, so
+long notes, specs, runbooks, and diagram-heavy docs can stay readable while the
+source file remains wherever you want to edit it.
+
+## Highlights
+
+- **Terminal-first launch** - open a file directly, scan the current directory,
+  or pass a directory and pick from matching Markdown files with `fzf`.
+- **Dedicated preview window** - Electron provides a standalone desktop surface
+  instead of another editor split.
+- **Live reload on save** - the preview updates when the target file changes.
+- **Mermaid included** - fenced `mermaid` blocks render as diagrams without a
+  separate browser setup.
+- **Readable defaults, local preferences** - configure font stacks, font sizes,
+  and window dimensions in a small TOML file.
+- **Conservative renderer boundary** - the renderer gets a limited API surface,
+  external links open outside the preview, and unsupported raw HTML is escaped.
+
+## Quick Start
+
+### Requirements
 
 - `mise`
-- `bun`
-- `fzf`
+- `bun` - pinned by `mise.toml`
+- `fzf` - required when selecting a file from a directory
 
-`bun` 버전은 `mise.toml`로 고정한다.
-
-## 설치
+### Install
 
 ```bash
 mise install
 bun install
+bun run build
 ```
 
-어느 디렉토리에서나 `mdp` 커맨드로 실행하려면 이 저장소를 전역 링크한다.
+Link the CLI if you want to run `mdp` from any directory:
 
 ```bash
 bun link
 ```
 
-`mdp`가 바로 실행되지 않으면 Bun의 전역 bin 디렉토리를 `PATH`에 추가한다.
+If `mdp` is not found after linking, add Bun's global bin directory to your
+shell path:
 
 ```sh
 # ~/.zshrc
@@ -35,63 +67,69 @@ source ~/.zshrc
 command -v mdp
 ```
 
-링크 후에는 현재 저장소 밖에서도 같은 커맨드를 사용할 수 있다.
+## Usage
+
+Open a specific file:
 
 ```bash
 mdp ~/notes/demo.md
+```
+
+Scan a directory, then pick a Markdown file with `fzf`:
+
+```bash
 mdp ~/notes
 ```
 
-전역 링크를 제거하려면 아래 명령을 사용한다.
+Scan the current directory:
 
 ```bash
-bun unlink
-```
-
-## 실행
-
-인자를 넘기지 않으면 현재 작업 디렉토리를 기준으로 `*.md` 파일을 찾는다.
-
-```bash
-bun run dev
-```
-
-빌드된 CLI 엔트리를 직접 실행하려면 아래 명령을 사용한다.
-
-```bash
-bun run build
 mdp
 ```
 
-파일 경로를 직접 넘기면 바로 해당 파일을 연다.
+During development, run the same flow through the source entrypoint:
 
 ```bash
-bun run dev -- docs/superpowers/specs/2026-04-23-markdown-preview-renderer-design.md
-```
-
-디렉토리를 넘기면 재귀적으로 `*.md`를 수집한 뒤 `fzf`로 선택한다.
-
-```bash
+bun run dev -- README.md
 bun run dev -- docs
 ```
 
-## 설정 파일
+When a directory is scanned, `.git`, `node_modules`, and hidden directories are
+excluded by default.
 
-사용자 설정 파일은 `$HOME/.config/markdown-preview/config.toml` 경로를 사용한다.
-파일이 없으면 첫 실행 시 기본값 기준으로 자동 생성한다.
+## Configuration
 
-```toml
-font-family = ["Iosevka Aile", "Pretendard", "sans-serif"]
-font-size = 18
-monospace-font-family = ["Iosevka Term", "monospace"]
-monospace-font-size = 15
-width = 1440
-height = 960
+User preferences live at:
+
+```text
+~/.config/markdown-preview/config.toml
 ```
 
-설정 파일이 없거나 값이 잘못되면 기본값을 사용한다.
+The file is created automatically on first run if it does not already exist.
 
-## 검증 명령
+```toml
+font-family = ["Apple SD Gothic Neo", "Avenir Next", "Segoe UI", "sans-serif"]
+font-size = 16
+monospace-font-family = ["SFMono-Regular", "JetBrains Mono", "monospace"]
+monospace-font-size = 16
+width = 1560
+height = 1560
+```
+
+Invalid or missing values fall back to the built-in defaults.
+
+## What It Renders
+
+- Common Markdown syntax through `markdown-it`
+- Tables with horizontal scrolling
+- `mermaid` fenced code blocks
+- A small raw HTML allowlist for practical Markdown authoring, including
+  `br`, `img`, `kbd`, `sub`, `sup`, `summary`, and `details`
+
+Unsupported raw HTML is escaped so the document remains readable instead of
+breaking the preview.
+
+## Development
 
 ```bash
 bun test
@@ -99,23 +137,19 @@ bun run check
 bun run build
 ```
 
-## 현재 범위
+Build output is written to `dist/`. The CLI wrapper in `bin/markdown-preview.js`
+expects that built entrypoint to exist.
 
-- Markdown 기본 렌더링
-- `mermaid` fenced code block 렌더링
-- preload 기반의 제한된 renderer API 노출
-- 파일 저장 시 자동 프리뷰 갱신
-- `.git`, `node_modules`, 숨김 디렉토리 제외
+## Current Scope
 
-## 현재 비범위
+`markdown-preview` is intentionally preview-only. It does not edit files, manage
+tabs, restore sessions, or emulate the full VS Code extension environment.
 
-- 상대 경로 링크 처리
-- 상대 경로 이미지 처리
-- 테마 전환
-- VS Code extension 호환
-- 전체 Electron E2E 테스트
+Planned extension points include relative image/link handling, themes, file glob
+options, and richer window reuse behavior.
 
-## 구현 메모
+## Remove The Local CLI Link
 
-- Mermaid는 renderer에서 `startOnLoad: false`와 `securityLevel: 'strict'`로 초기화한다.
-- Markdown 렌더링과 Mermaid SVG 렌더링을 분리해서, 다이어그램 실패가 창 전체 실패로 번지지 않게 했다.
+```bash
+bun unlink
+```

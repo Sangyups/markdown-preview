@@ -36,19 +36,55 @@ source file remains wherever you want to edit it.
 
 ### Requirements
 
-- `mise`
-- `bun` - pinned by `mise.toml`
-- `fzf` - required when selecting a file from a directory
+- To install a shared package: Bun 1.3.1 or newer, or Node.js 20 or newer with
+  npm 9 or newer
+- To build from source: `mise` and the Bun version pinned by `mise.toml`
+- `fzf` - required only when selecting a file from a directory
 
-### Install
+### Install From A Shared Package
+
+If you received a packaged `markdown-preview-*.tgz` file, install it globally
+with Bun:
+
+```bash
+bun install -g ./markdown-preview-0.1.0.tgz
+command -v mdp
+```
+
+The same tarball can also be installed with npm:
+
+```bash
+npm install -g ./markdown-preview-0.1.0.tgz
+command -v mdp
+```
+
+Then open a Markdown file:
+
+```bash
+mdp ~/notes/architecture.md
+```
+
+To update to a newer shared package, run the same install command with the new
+`.tgz` file.
+
+### Create A Shared Package
+
+Maintainers should use Bun for development and packaging:
 
 ```bash
 mise install
 bun install
-bun run build
+bun pm pack
 ```
 
-Link the CLI if you want to run `mdp` from any directory:
+`bun pm pack` runs the package `prepare` script, builds `dist/`, and writes an
+npm-compatible `markdown-preview-<version>.tgz` file in the project directory.
+Share that tarball with teammates; they can install it with Bun or npm.
+
+### Install From Source
+
+Source development is Bun-only. Link the CLI if you want to run `mdp` from any
+directory:
 
 ```bash
 bun link

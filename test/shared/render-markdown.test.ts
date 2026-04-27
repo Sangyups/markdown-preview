@@ -105,4 +105,29 @@ describe("renderMarkdown", () => {
             '<li class="task-list-item">\n<input class="task-list-item-checkbox" type="checkbox" checked disabled> <ul>'
         );
     });
+
+    test("renders footnote references and definitions", () => {
+        const html = renderMarkdown(
+            "Text with a footnote.[^1]\n\n[^1]: Footnote text"
+        );
+
+        expect(html).toContain('class="footnote-ref"');
+        expect(html).toContain('href="#fn1"');
+        expect(html).toContain('id="fnref1"');
+        expect(html).toContain('<section class="footnotes">');
+        expect(html).toMatch(/<li id="fn1"\s+class="footnote-item">/);
+        expect(html).toContain("Footnote text");
+        expect(html).toContain('class="footnote-backref"');
+        expect(html).not.toContain("[^1]: Footnote text");
+    });
+
+    test("renders inline footnotes in the collected footnote section", () => {
+        const html = renderMarkdown("Text with inline note.^[Inline text]");
+
+        expect(html).toContain('class="footnote-ref"');
+        expect(html).toContain('<section class="footnotes">');
+        expect(html).toMatch(/<li id="fn1"\s+class="footnote-item">/);
+        expect(html).toContain("Inline text");
+        expect(html).not.toContain("^[Inline text]");
+    });
 });

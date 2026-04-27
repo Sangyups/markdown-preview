@@ -1,5 +1,6 @@
 import hljs from "highlight.js/lib/common";
 import MarkdownIt from "markdown-it";
+import markdownItFootnote from "markdown-it-footnote";
 
 import { encodeMermaidSource, isMermaidFence } from "./extract-mermaid-blocks";
 
@@ -32,7 +33,7 @@ const markdown = new MarkdownIt({
     highlight: highlightCode,
     linkify: true,
     typographer: false,
-});
+}).use(markdownItFootnote);
 
 const allowedInlineHtmlTags = new Set([
     "br",

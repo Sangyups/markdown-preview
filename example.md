@@ -1,7 +1,7 @@
 # Markdown Preview Kitchen Sink
 
 Use this file to exercise common Markdown, GitHub Flavored Markdown patterns,
-allowed inline HTML, code fences, and Mermaid diagrams.
+allowed inline HTML, footnotes, code fences, and Mermaid diagrams.
 
 ```bash
 bun run dev -- example.md
@@ -83,7 +83,7 @@ JSON:
 ```json
 {
     "name": "markdown-preview",
-    "features": ["markdown", "gfm", "mermaid"]
+    "features": ["markdown", "gfm", "footnotes", "mermaid"]
 }
 ```
 
@@ -174,6 +174,20 @@ Safe image tag:
 Unsupported raw HTML should be escaped rather than executed:
 
 <script>alert("this should not run")</script>
+
+## Footnotes
+
+Footnotes can point to collected notes at the end of the document.[^preview]
+They can also be written inline when the note is short.^[Inline footnotes are
+rendered in the same collected footnote section.]
+
+Multiple references can use descriptive labels, not just numbers.[^labels]
+
+[^preview]: This note uses the standard `[^label]` reference and definition
+    syntax.
+
+[^labels]: Descriptive labels make source Markdown easier to scan while the
+    rendered preview still numbers footnotes sequentially.
 
 ## Mermaid: Flowchart
 

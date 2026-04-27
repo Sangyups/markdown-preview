@@ -124,6 +124,7 @@ theme. Invalid or missing values fall back to the built-in defaults.
 
 - Common Markdown syntax through `markdown-it`
 - Tables with horizontal scrolling
+- Footnotes through standard `[^1]` and `^[inline]` syntax
 - `mermaid` fenced code blocks
 - A small raw HTML allowlist for practical Markdown authoring, including
   `br`, `img`, `kbd`, `sub`, `sup`, `summary`, and `details`

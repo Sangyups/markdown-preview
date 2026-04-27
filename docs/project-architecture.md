@@ -171,6 +171,7 @@ Markdown 변환은 main process에서 수행됩니다.
 `src/shared/markdown/render-markdown.ts`는 `markdown-it`을 사용하고 다음 renderer
 rule을 추가합니다.
 
+- `markdown-it-footnote`로 표준 footnote 문법을 footnote section으로 변환합니다.
 - `mermaid` fenced code block을 renderer용 placeholder HTML로 변환합니다.
 - table을 `.table-scroll` wrapper로 감쌉니다.
 - raw HTML은 allowlist를 통과한 태그만 유지합니다.

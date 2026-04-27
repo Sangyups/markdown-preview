@@ -35,6 +35,14 @@ describe("preview styles", () => {
         expect(previewCss).toContain(".markdown-body .task-list-item-checkbox");
     });
 
+    test("styles rendered footnotes", () => {
+        expect(previewCss).toContain(".markdown-body .footnotes");
+        expect(previewCss).toContain(".markdown-body .footnotes-sep");
+        expect(previewCss).toContain(".markdown-body .footnote-ref");
+        expect(previewCss).toContain(".markdown-body .footnote-backref");
+        expect(previewCss).toContain(".markdown-body .footnote-item");
+    });
+
     test("styles syntax highlight token classes", () => {
         expect(previewCss).toContain(".markdown-body .hljs-keyword");
         expect(previewCss).toContain(".markdown-body .hljs-string");

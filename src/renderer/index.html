@@ -14,6 +14,58 @@
   </head>
   <body>
     <main class="app-shell">
+      <section
+        aria-label="Find in preview"
+        class="search-panel"
+        hidden
+        id="search-panel"
+      >
+        <label
+          class="search-label"
+          for="search-input"
+        >
+          Find
+        </label>
+        <input
+          autocomplete="off"
+          class="search-input"
+          id="search-input"
+          spellcheck="false"
+          type="search"
+        />
+        <output
+          aria-live="polite"
+          class="search-count"
+          id="search-count"
+        >0/0</output>
+        <button
+          aria-label="Previous match"
+          class="search-button"
+          id="search-previous"
+          title="Previous match"
+          type="button"
+        >
+          ↑
+        </button>
+        <button
+          aria-label="Next match"
+          class="search-button"
+          id="search-next"
+          title="Next match"
+          type="button"
+        >
+          ↓
+        </button>
+        <button
+          aria-label="Close search"
+          class="search-button"
+          id="search-close"
+          title="Close search"
+          type="button"
+        >
+          ×
+        </button>
+      </section>
       <header class="app-header">
         <p class="app-kicker">Markdown Preview</p>
         <h1

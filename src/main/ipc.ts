@@ -5,6 +5,7 @@ import {
     PREVIEW_UPDATE_CHANNEL,
     type PreviewPayload,
 } from "../shared/types";
+import { registerFindIpcHandlers } from "./find-ipc";
 
 export function registerPreviewIpc(
     getCurrentState: () => PreviewPayload | Promise<PreviewPayload>
@@ -27,4 +28,24 @@ export function sendPreviewUpdate(
     }
 
     previewWindow.webContents.send(PREVIEW_UPDATE_CHANNEL, payload);
+}
+
+export function registerFindIpc(previewWindow: BrowserWindow) {
+    const { webContents } = previewWindow;
+
+    return registerFindIpcHandlers(ipcMain, {
+        findInPage: (text, options) => webContents.findInPage(text, options),
+        off: (eventName, listener) => {
+            webContents.off(eventName, listener);
+        },
+        on: (eventName, listener) => {
+            webContents.on(eventName, listener);
+        },
+        send: (channel, result) => {
+            webContents.send(channel, result);
+        },
+        stopFindInPage: (action) => {
+            webContents.stopFindInPage(action);
+        },
+    });
 }

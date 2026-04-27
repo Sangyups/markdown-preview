@@ -19,7 +19,7 @@ import {
 } from "../shared/theme-override";
 import type { PreviewPayload } from "../shared/types";
 import { createWindow } from "./create-window";
-import { registerPreviewIpc, sendPreviewUpdate } from "./ipc";
+import { registerFindIpc, registerPreviewIpc, sendPreviewUpdate } from "./ipc";
 import { buildPreviewStatus } from "./preview-status";
 import { watchFile } from "./watch-file";
 
@@ -64,6 +64,7 @@ async function bootstrap() {
     );
 
     const unregisterPreviewIpc = registerPreviewIpc(() => currentPreview);
+    const unregisterFindIpc = registerFindIpc(previewWindow);
     const stopWatching = watchFile(targetPath, async () => {
         currentPreview = await buildPreviewPayload(
             targetPath,
@@ -75,6 +76,7 @@ async function bootstrap() {
 
     previewWindow.on("closed", () => {
         stopWatching();
+        unregisterFindIpc();
         unregisterPreviewIpc();
     });
 

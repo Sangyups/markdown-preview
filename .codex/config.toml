@@ -1,0 +1,9 @@
+[features]
+codex_hooks = true
+
+[[hooks.Stop]]
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'bash "$(git rev-parse --show-toplevel)/.codex/hooks/stop_quality_gate.sh"'
+timeout = 600
+statusMessage = "Running lint, format, and tests"

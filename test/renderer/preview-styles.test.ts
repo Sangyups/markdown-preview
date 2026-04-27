@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 const previewCss = await Bun.file("src/renderer/preview.css").text();
+const darkThemeStart = previewCss.indexOf(
+    "@media (prefers-color-scheme: dark)"
+);
+const globalStylesStart = previewCss.indexOf("* {");
+const rootStyleBlock = previewCss.slice(0, darkThemeStart);
+const darkThemeStyleBlock = previewCss.slice(darkThemeStart, globalStylesStart);
 
 describe("preview styles", () => {
     test("keeps wide tables inside a dedicated scroll container", () => {
@@ -49,21 +55,45 @@ describe("preview styles", () => {
         expect(previewCss).toContain(".markdown-body .hljs-number");
     });
 
-    test("uses light theme defaults for code blocks", () => {
-        expect(previewCss).toContain("--preview-code-background: #f6f8fa;");
-        expect(previewCss).toContain("--preview-code-foreground: #24292f;");
+    test("uses GitHub Dark Dimmed-like defaults for code blocks", () => {
+        expect(rootStyleBlock).toContain("--preview-code-background: #22272e;");
+        expect(rootStyleBlock).toContain("--preview-code-foreground: #adbac7;");
+        expect(rootStyleBlock).toContain("--preview-code-comment: #768390;");
+        expect(rootStyleBlock).toContain("--preview-code-keyword: #f47067;");
+        expect(rootStyleBlock).toContain("--preview-code-string: #96d0ff;");
         expect(previewCss).toContain(
             "background: var(--preview-code-background)"
         );
         expect(previewCss).toContain("color: var(--preview-code-foreground)");
-        expect(previewCss).not.toContain("background: #1b1f1d;");
-        expect(previewCss).not.toContain("color: #edf1ed;");
+        expect(rootStyleBlock).not.toContain(
+            "--preview-code-background: #f6f8fa;"
+        );
+        expect(rootStyleBlock).not.toContain(
+            "--preview-code-foreground: #24292f;"
+        );
     });
 
-    test("declares dark theme tokens behind the system color scheme media query", () => {
-        expect(previewCss).toContain("@media (prefers-color-scheme: dark)");
-        expect(previewCss).toContain("color-scheme: dark");
-        expect(previewCss).toContain("--preview-code-background: #151b18;");
-        expect(previewCss).toContain("--preview-code-foreground: #d9e1dc;");
+    test("does not override code block tokens behind the system color scheme media query", () => {
+        expect(darkThemeStyleBlock).toContain(
+            "@media (prefers-color-scheme: dark)"
+        );
+        expect(darkThemeStyleBlock).toContain("color-scheme: dark");
+
+        for (const codeToken of [
+            "--preview-code-background:",
+            "--preview-code-border:",
+            "--preview-code-foreground:",
+            "--preview-code-comment:",
+            "--preview-code-keyword:",
+            "--preview-code-literal:",
+            "--preview-code-symbol:",
+            "--preview-code-string:",
+            "--preview-code-title:",
+            "--preview-code-muted:",
+            "--preview-code-deletion:",
+            "--preview-code-addition:",
+        ]) {
+            expect(darkThemeStyleBlock).not.toContain(codeToken);
+        }
     });
 });

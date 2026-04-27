@@ -20,7 +20,19 @@ bun install
 어느 디렉토리에서나 `mdp` 커맨드로 실행하려면 이 저장소를 전역 링크한다.
 
 ```bash
-npm link
+bun link
+```
+
+`mdp`가 바로 실행되지 않으면 Bun의 전역 bin 디렉토리를 `PATH`에 추가한다.
+
+```sh
+# ~/.zshrc
+export PATH="$HOME/.bun/bin:$PATH"
+```
+
+```bash
+source ~/.zshrc
+command -v mdp
 ```
 
 링크 후에는 현재 저장소 밖에서도 같은 커맨드를 사용할 수 있다.
@@ -33,7 +45,7 @@ mdp ~/notes
 전역 링크를 제거하려면 아래 명령을 사용한다.
 
 ```bash
-npm unlink -g markdown-preview
+bun unlink
 ```
 
 ## 실행

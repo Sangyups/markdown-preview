@@ -23,4 +23,9 @@ describe("preview styles", () => {
         expect(previewCss).toContain("height: auto");
         expect(previewCss).toContain("max-width: 100%");
     });
+
+    test("shows a pointer cursor for details disclosure summaries", () => {
+        expect(previewCss).toContain(".markdown-body details > summary");
+        expect(previewCss).toContain("cursor: pointer");
+    });
 });

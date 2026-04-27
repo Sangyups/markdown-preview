@@ -97,6 +97,10 @@ body {
     color: #0f6b79;
 }
 
+.markdown-body details > summary {
+    cursor: pointer;
+}
+
 .markdown-body img {
     display: block;
     height: auto;

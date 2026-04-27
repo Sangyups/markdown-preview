@@ -2,7 +2,10 @@ import { spawn } from "node:child_process";
 
 import electronPath from "electron";
 
+import type { AppTheme } from "../shared/config";
 import { resolveRuntimePath } from "../shared/runtime-path";
+import { parseThemeOverrideOption } from "../shared/theme-override";
+import { buildElectronMainArgs } from "./electron-main-args";
 import { toFilePathCandidates } from "./fzf-candidates";
 import { resolveTarget } from "./resolve-target";
 import { runFzf } from "./run-fzf";
@@ -12,16 +15,16 @@ const ARGUMENT_ERROR_EXIT_CODE = 1;
 
 async function main() {
     try {
-        const targetPath = await selectTargetPath(
-            process.argv.slice(2),
-            process.cwd()
+        const { remainingArgs, themeOverride } = parseThemeOverrideOption(
+            process.argv.slice(2)
         );
+        const targetPath = await selectTargetPath(remainingArgs, process.cwd());
 
         if (!targetPath) {
             process.exit(0);
         }
 
-        const exitCode = await openPreviewWindow(targetPath);
+        const exitCode = await openPreviewWindow(targetPath, themeOverride);
         process.exit(exitCode);
     } catch (error) {
         console.error(toErrorMessage(error));
@@ -63,7 +66,7 @@ async function selectTargetPath(args: string[], cwd: string) {
     return null;
 }
 
-function openPreviewWindow(targetPath: string) {
+function openPreviewWindow(targetPath: string, themeOverride: AppTheme | null) {
     return new Promise<number>((resolve, reject) => {
         const mainEntryPath = resolveRuntimePath(
             process.argv,
@@ -71,7 +74,7 @@ function openPreviewWindow(targetPath: string) {
         );
         const electronProcess = spawn(
             electronPath,
-            [mainEntryPath, "--target", targetPath],
+            buildElectronMainArgs(mainEntryPath, targetPath, themeOverride),
             {
                 env: process.env,
                 stdio: "inherit",

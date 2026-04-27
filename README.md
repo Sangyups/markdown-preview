@@ -87,6 +87,12 @@ Scan the current directory:
 mdp
 ```
 
+Override the configured theme for one run:
+
+```bash
+mdp --theme=dark ~/notes/demo.md
+```
+
 During development, run the same flow through the source entrypoint:
 
 ```bash
@@ -118,7 +124,9 @@ height = 1560
 ```
 
 `theme` accepts `auto`, `light`, or `dark`. `auto` follows the operating system
-theme. Invalid or missing values fall back to the built-in defaults.
+theme. Invalid or missing values fall back to the built-in defaults. Passing
+`--theme=auto`, `--theme=light`, or `--theme=dark` on the CLI overrides the
+configured theme for that launch only.
 
 ## What It Renders
 

@@ -160,7 +160,7 @@ function readTheme(value: unknown) {
         : DEFAULT_APP_CONFIG.theme;
 }
 
-function isAppTheme(value: string): value is AppTheme {
+export function isAppTheme(value: string): value is AppTheme {
     return APP_THEMES.has(value as AppTheme);
 }
 

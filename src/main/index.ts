@@ -3,11 +3,16 @@ import path from "node:path";
 import { app, nativeTheme } from "electron";
 import {
     type AppConfig,
+    type AppTheme,
     loadAppConfig,
     toCssFontFamilyValue,
     toElectronThemeSource,
 } from "../shared/config";
 import { renderMarkdown } from "../shared/markdown/render-markdown";
+import {
+    applyThemeOverride,
+    parseThemeOverrideOption,
+} from "../shared/theme-override";
 import type { PreviewPayload } from "../shared/types";
 import { createWindow } from "./create-window";
 import { registerPreviewIpc, sendPreviewUpdate } from "./ipc";
@@ -17,6 +22,17 @@ void bootstrap();
 
 async function bootstrap() {
     const targetPath = parseTargetPath(process.argv);
+    let themeOverride: AppTheme | null;
+
+    try {
+        themeOverride = parseThemeOverrideOption(
+            process.argv.slice(2)
+        ).themeOverride;
+    } catch (error) {
+        console.error(toErrorMessage(error));
+        app.exit(1);
+        return;
+    }
 
     if (!targetPath) {
         console.error("Missing --target <file-path> argument.");
@@ -26,7 +42,7 @@ async function bootstrap() {
 
     await app.whenReady();
 
-    const appConfig = await loadAppConfig();
+    const appConfig = applyThemeOverride(await loadAppConfig(), themeOverride);
     nativeTheme.themeSource = toElectronThemeSource(appConfig.theme);
 
     const previewWindow = createWindow(

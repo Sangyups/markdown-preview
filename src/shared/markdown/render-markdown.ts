@@ -62,8 +62,8 @@ const renderTableClose =
     markdown.renderer.rules.table_close?.bind(markdown.renderer.rules) ??
     ((tokens, index, options, _env, self) =>
         self.renderToken(tokens, index, options));
-const renderListItemOpen =
-    markdown.renderer.rules.list_item_open?.bind(markdown.renderer.rules) ??
+const renderParagraphOpen =
+    markdown.renderer.rules.paragraph_open?.bind(markdown.renderer.rules) ??
     ((
         tokens: MarkdownToken[],
         index: number,
@@ -100,12 +100,18 @@ markdown.core.ruler.after(
                 continue;
             }
 
+            const taskListItem = {
+                checked: markerMatch[1].toLowerCase() === "x",
+            };
+
             listItemToken.attrJoin("class", "task-list-item");
             listItemToken.meta = {
                 ...listItemToken.meta,
-                taskListItem: {
-                    checked: markerMatch[1].toLowerCase() === "x",
-                },
+                taskListItem,
+            };
+            inlineToken.meta = {
+                ...inlineToken.meta,
+                taskListItem,
             };
             inlineToken.content = inlineToken.content.slice(
                 markerMatch[0].length
@@ -178,33 +184,39 @@ markdown.renderer.rules.table_open = (tokens, index, options, env, self) =>
 markdown.renderer.rules.table_close = (tokens, index, options, env, self) =>
     `${renderTableClose(tokens, index, options, env, self)}</div>`;
 
-markdown.renderer.rules.list_item_open = (
+markdown.renderer.rules.paragraph_open = (
     tokens: MarkdownToken[],
     index: number,
     options: unknown,
     env: unknown,
     self: MarkdownRenderer
 ) => {
-    const renderedListItem = renderListItemOpen(
+    const renderedParagraph = renderParagraphOpen(
         tokens,
         index,
         options,
         env,
         self
     );
-    const taskListItem = tokens[index].meta?.taskListItem;
+    const inlineToken = tokens[index + 1];
+    const taskListItem =
+        inlineToken?.type === "inline" ? inlineToken.meta?.taskListItem : null;
 
     if (!taskListItem) {
-        return renderedListItem;
+        return renderedParagraph;
     }
 
-    const checkedAttribute = taskListItem.checked ? " checked" : "";
-
-    return `${renderedListItem}<input class="task-list-item-checkbox" type="checkbox"${checkedAttribute} disabled> `;
+    return `${renderedParagraph}${renderTaskListCheckbox(taskListItem)} `;
 };
 
 export function renderMarkdown(source: string) {
     return markdown.render(source);
+}
+
+function renderTaskListCheckbox(taskListItem: TaskListItemMeta) {
+    const checkedAttribute = taskListItem.checked ? " checked" : "";
+
+    return `<input class="task-list-item-checkbox" type="checkbox"${checkedAttribute} disabled>`;
 }
 
 function highlightCode(source: string, language: string) {

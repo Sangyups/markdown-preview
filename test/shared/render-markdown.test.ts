@@ -95,6 +95,19 @@ describe("renderMarkdown", () => {
         expect(html).not.toContain("[ ] todo");
     });
 
+    test("keeps loose task-list checkboxes aligned with first paragraph text", () => {
+        const html = renderMarkdown(
+            "- [ ] **Step 1: Write the failing tests**\n\n  Details"
+        );
+
+        expect(html).toContain(
+            '<li class="task-list-item">\n<p><input class="task-list-item-checkbox" type="checkbox" disabled> <strong>Step 1: Write the failing tests</strong></p>'
+        );
+        expect(html).not.toContain(
+            '<input class="task-list-item-checkbox" type="checkbox" disabled> <p><strong>Step 1: Write the failing tests</strong></p>'
+        );
+    });
+
     test("does not apply nested task-list markers to parent list items", () => {
         const html = renderMarkdown("-\n  - [x] child\n");
 

@@ -36,7 +36,7 @@ sequenceDiagram
 
     User->>CLI: mdp [path]
     CLI->>CLI: target file 결정
-    CLI->>Main: Electron 실행 (--target filePath)
+    CLI->>Main: Electron 실행 (--target filePath --source=file|stdin)
     Main->>Main: Markdown 파일 읽기
     Main->>Main: PreviewPayload 생성
     Renderer->>Preload: getInitialState()
@@ -59,20 +59,23 @@ Markdown 변환을 담당하고, renderer는 preload bridge를 통해 payload만
 | --- | --- |
 | `src/cli/index.ts` | target 선택 후 Electron main process 실행 |
 | `src/cli/resolve-target.ts` | 인자 0개 또는 1개를 파일/디렉터리 target으로 해석 |
+| `src/cli/stdin-target.ts` | stdin 입력을 임시 Markdown 파일 target으로 변환 |
 | `src/cli/scan-markdown-files.ts` | 디렉터리에서 `.md` 파일 재귀 탐색 |
 | `src/cli/fzf-candidates.ts` | `fzf` label과 실제 파일 경로 매핑 |
 | `src/cli/run-fzf.ts` | `fzf` subprocess 실행 결과를 typed result로 변환 |
 
 CLI target 결정 규칙은 다음과 같습니다.
 
-1. 인자가 없으면 현재 작업 디렉터리를 target으로 사용합니다.
-2. target이 파일이면 바로 preview 대상으로 사용합니다.
-3. target이 디렉터리면 `.md` 파일을 찾고 `fzf`로 하나를 선택합니다.
-4. `.git`, `node_modules`, 숨김 디렉터리는 Markdown 탐색에서 제외합니다.
-5. `fzf` 선택 취소는 정상 종료로 처리합니다.
+1. 인자가 없고 stdin이 파이프되어 있으면 stdin을 임시 Markdown 파일로 저장해 target으로 사용합니다.
+2. 인자가 없고 stdin이 TTY이면 현재 작업 디렉터리를 target으로 사용합니다.
+3. target이 파일이면 바로 preview 대상으로 사용합니다.
+4. target이 디렉터리면 `.md` 파일을 찾고 `fzf`로 하나를 선택합니다.
+5. `.git`, `node_modules`, 숨김 디렉터리는 Markdown 탐색에서 제외합니다.
+6. `fzf` 선택 취소는 정상 종료로 처리합니다.
 
 파일 target이 결정되면 CLI는 Electron 실행 파일을 spawn하고
-`dist/main/index.js --target <filePath>`를 전달합니다.
+stdin 입력은 `dist/main/index.js --target <tempFilePath> --source=stdin`으로 전달하고,
+파일 입력은 `--source=file`로 전달합니다.
 
 ## Main Process 계층
 

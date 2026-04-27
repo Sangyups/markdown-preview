@@ -75,6 +75,12 @@ Open a specific file:
 mdp ~/notes/demo.md
 ```
 
+Preview Markdown from stdin:
+
+```bash
+cat README.md | mdp
+```
+
 Scan a directory, then pick a Markdown file with `fzf`:
 
 ```bash

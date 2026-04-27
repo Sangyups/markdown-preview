@@ -10,21 +10,28 @@ import {
 } from "../shared/config";
 import { renderMarkdown } from "../shared/markdown/render-markdown";
 import {
+    type PreviewSource,
+    parsePreviewSourceOption,
+} from "../shared/preview-source";
+import {
     applyThemeOverride,
     parseThemeOverrideOption,
 } from "../shared/theme-override";
 import type { PreviewPayload } from "../shared/types";
 import { createWindow } from "./create-window";
 import { registerPreviewIpc, sendPreviewUpdate } from "./ipc";
+import { buildPreviewStatus } from "./preview-status";
 import { watchFile } from "./watch-file";
 
 void bootstrap();
 
 async function bootstrap() {
     const targetPath = parseTargetPath(process.argv);
+    let previewSource: PreviewSource;
     let themeOverride: AppTheme | null;
 
     try {
+        previewSource = parsePreviewSourceOption(process.argv.slice(2));
         themeOverride = parseThemeOverrideOption(
             process.argv.slice(2)
         ).themeOverride;
@@ -50,11 +57,19 @@ async function bootstrap() {
         appConfig,
         nativeTheme.shouldUseDarkColors
     );
-    let currentPreview = await buildPreviewPayload(targetPath, appConfig);
+    let currentPreview = await buildPreviewPayload(
+        targetPath,
+        appConfig,
+        previewSource
+    );
 
     const unregisterPreviewIpc = registerPreviewIpc(() => currentPreview);
     const stopWatching = watchFile(targetPath, async () => {
-        currentPreview = await buildPreviewPayload(targetPath, appConfig);
+        currentPreview = await buildPreviewPayload(
+            targetPath,
+            appConfig,
+            previewSource
+        );
         sendPreviewUpdate(previewWindow, currentPreview);
     });
 
@@ -70,7 +85,8 @@ async function bootstrap() {
 
 async function buildPreviewPayload(
     filePath: string,
-    appConfig: AppConfig
+    appConfig: AppConfig,
+    previewSource: PreviewSource
 ): Promise<PreviewPayload> {
     try {
         const markdownSource = await readFile(filePath, "utf8");
@@ -88,10 +104,7 @@ async function buildPreviewPayload(
                 ),
                 monospaceFontSize: appConfig.monospaceFontSize,
             },
-            status: {
-                message: "Watching for file changes.",
-                tone: "info",
-            },
+            status: buildPreviewStatus(previewSource),
             updatedAt: Date.now(),
         };
     } catch (error) {

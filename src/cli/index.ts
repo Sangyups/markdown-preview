@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import electronPath from "electron";
 
 import type { AppTheme } from "../shared/config";
+import type { PreviewSource } from "../shared/preview-source";
 import { resolveRuntimePath } from "../shared/runtime-path";
 import { parseThemeOverrideOption } from "../shared/theme-override";
 import { buildElectronMainArgs } from "./electron-main-args";
@@ -10,33 +11,74 @@ import { toFilePathCandidates } from "./fzf-candidates";
 import { resolveTarget } from "./resolve-target";
 import { runFzf } from "./run-fzf";
 import { scanMarkdownFiles } from "./scan-markdown-files";
+import {
+    createStdinTarget,
+    type StdinLike,
+    shouldUseStdinTarget,
+} from "./stdin-target";
 
 const ARGUMENT_ERROR_EXIT_CODE = 1;
 
+interface SelectedTarget {
+    cleanup: () => Promise<void>;
+    filePath: string;
+    source: PreviewSource;
+}
+
+const NOOP_CLEANUP = async () => {};
+
 async function main() {
+    let selectedTarget: SelectedTarget | null = null;
+    let exitCode = 0;
+
     try {
         const { remainingArgs, themeOverride } = parseThemeOverrideOption(
             process.argv.slice(2)
         );
-        const targetPath = await selectTargetPath(remainingArgs, process.cwd());
+        selectedTarget = await selectTarget(remainingArgs, process.cwd());
 
-        if (!targetPath) {
-            process.exit(0);
+        if (!selectedTarget) {
+            return;
         }
 
-        const exitCode = await openPreviewWindow(targetPath, themeOverride);
-        process.exit(exitCode);
+        exitCode = await openPreviewWindow(
+            selectedTarget.filePath,
+            selectedTarget.source,
+            themeOverride
+        );
     } catch (error) {
         console.error(toErrorMessage(error));
-        process.exit(ARGUMENT_ERROR_EXIT_CODE);
+        exitCode = ARGUMENT_ERROR_EXIT_CODE;
+    } finally {
+        await selectedTarget?.cleanup();
     }
+
+    process.exit(exitCode);
 }
 
-async function selectTargetPath(args: string[], cwd: string) {
+async function selectTarget(
+    args: string[],
+    cwd: string,
+    stdin: StdinLike = process.stdin
+): Promise<SelectedTarget | null> {
+    if (shouldUseStdinTarget(args, stdin)) {
+        const stdinTarget = await createStdinTarget(stdin);
+
+        return {
+            cleanup: stdinTarget.cleanup,
+            filePath: stdinTarget.filePath,
+            source: "stdin",
+        };
+    }
+
     const resolvedTarget = await resolveTarget(args, cwd);
 
     if (resolvedTarget.kind === "file") {
-        return resolvedTarget.filePath;
+        return {
+            cleanup: NOOP_CLEANUP,
+            filePath: resolvedTarget.filePath,
+            source: "file",
+        };
     }
 
     const markdownFiles = await scanMarkdownFiles(resolvedTarget.directoryPath);
@@ -52,7 +94,11 @@ async function selectTargetPath(args: string[], cwd: string) {
     );
 
     if (selection.kind === "selected") {
-        return selection.value;
+        return {
+            cleanup: NOOP_CLEANUP,
+            filePath: selection.value,
+            source: "file",
+        };
     }
 
     if (selection.kind === "missing") {
@@ -66,7 +112,11 @@ async function selectTargetPath(args: string[], cwd: string) {
     return null;
 }
 
-function openPreviewWindow(targetPath: string, themeOverride: AppTheme | null) {
+function openPreviewWindow(
+    targetPath: string,
+    previewSource: PreviewSource,
+    themeOverride: AppTheme | null
+) {
     return new Promise<number>((resolve, reject) => {
         const mainEntryPath = resolveRuntimePath(
             process.argv,
@@ -74,7 +124,12 @@ function openPreviewWindow(targetPath: string, themeOverride: AppTheme | null) {
         );
         const electronProcess = spawn(
             electronPath,
-            buildElectronMainArgs(mainEntryPath, targetPath, themeOverride),
+            buildElectronMainArgs(
+                mainEntryPath,
+                targetPath,
+                previewSource,
+                themeOverride
+            ),
             {
                 env: process.env,
                 stdio: "inherit",

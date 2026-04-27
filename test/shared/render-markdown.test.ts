@@ -81,4 +81,28 @@ describe("renderMarkdown", () => {
         expect(html).toContain('<div class="table-scroll"><table>');
         expect(html).toContain("</table>\n</div>");
     });
+
+    test("renders GFM task-list checkboxes", () => {
+        const html = renderMarkdown("- [x] done\n- [ ] todo\n");
+
+        expect(html).toContain(
+            '<li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" checked disabled> done</li>'
+        );
+        expect(html).toContain(
+            '<li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" disabled> todo</li>'
+        );
+        expect(html).not.toContain("[x] done");
+        expect(html).not.toContain("[ ] todo");
+    });
+
+    test("does not apply nested task-list markers to parent list items", () => {
+        const html = renderMarkdown("-\n  - [x] child\n");
+
+        expect(html).toContain(
+            '<li class="task-list-item"><input class="task-list-item-checkbox" type="checkbox" checked disabled> child</li>'
+        );
+        expect(html).not.toContain(
+            '<li class="task-list-item">\n<input class="task-list-item-checkbox" type="checkbox" checked disabled> <ul>'
+        );
+    });
 });

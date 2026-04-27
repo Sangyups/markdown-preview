@@ -3,6 +3,30 @@ import MarkdownIt from "markdown-it";
 
 import { encodeMermaidSource, isMermaidFence } from "./extract-mermaid-blocks";
 
+type TaskListItemMeta = {
+    checked: boolean;
+};
+
+type MarkdownToken = {
+    attrJoin: (name: string, value: string) => void;
+    children?: MarkdownToken[];
+    content: string;
+    level: number;
+    meta?: {
+        taskListItem?: TaskListItemMeta;
+        [key: string]: unknown;
+    } | null;
+    type: string;
+};
+
+type MarkdownRenderer = {
+    renderToken: (
+        tokens: MarkdownToken[],
+        index: number,
+        options: unknown
+    ) => string;
+};
+
 const markdown = new MarkdownIt({
     html: true,
     highlight: highlightCode,
@@ -37,6 +61,58 @@ const renderTableClose =
     markdown.renderer.rules.table_close?.bind(markdown.renderer.rules) ??
     ((tokens, index, options, _env, self) =>
         self.renderToken(tokens, index, options));
+const renderListItemOpen =
+    markdown.renderer.rules.list_item_open?.bind(markdown.renderer.rules) ??
+    ((
+        tokens: MarkdownToken[],
+        index: number,
+        options: unknown,
+        _env: unknown,
+        self: MarkdownRenderer
+    ) => self.renderToken(tokens, index, options));
+
+markdown.core.ruler.after(
+    "inline",
+    "task_list_items",
+    (state: { tokens: MarkdownToken[] }) => {
+        for (let index = 0; index < state.tokens.length; index += 1) {
+            const listItemToken = state.tokens[index];
+
+            if (listItemToken.type !== "list_item_open") {
+                continue;
+            }
+
+            const inlineToken = findFirstInlineTokenInListItem(
+                state.tokens,
+                index
+            );
+
+            if (!inlineToken) {
+                continue;
+            }
+
+            const markerMatch = inlineToken.content.match(
+                /^\[([ xX])\](?:\s+|$)/
+            );
+
+            if (!markerMatch) {
+                continue;
+            }
+
+            listItemToken.attrJoin("class", "task-list-item");
+            listItemToken.meta = {
+                ...listItemToken.meta,
+                taskListItem: {
+                    checked: markerMatch[1].toLowerCase() === "x",
+                },
+            };
+            inlineToken.content = inlineToken.content.slice(
+                markerMatch[0].length
+            );
+            stripTaskListMarkerFromChildren(inlineToken, markerMatch[0].length);
+        }
+    }
+);
 
 markdown.renderer.rules.fence = (tokens, index, options, env, self) => {
     const token = tokens[index];
@@ -100,6 +176,31 @@ markdown.renderer.rules.table_open = (tokens, index, options, env, self) =>
 
 markdown.renderer.rules.table_close = (tokens, index, options, env, self) =>
     `${renderTableClose(tokens, index, options, env, self)}</div>`;
+
+markdown.renderer.rules.list_item_open = (
+    tokens: MarkdownToken[],
+    index: number,
+    options: unknown,
+    env: unknown,
+    self: MarkdownRenderer
+) => {
+    const renderedListItem = renderListItemOpen(
+        tokens,
+        index,
+        options,
+        env,
+        self
+    );
+    const taskListItem = tokens[index].meta?.taskListItem;
+
+    if (!taskListItem) {
+        return renderedListItem;
+    }
+
+    const checkedAttribute = taskListItem.checked ? " checked" : "";
+
+    return `${renderedListItem}<input class="task-list-item-checkbox" type="checkbox"${checkedAttribute} disabled> `;
+};
 
 export function renderMarkdown(source: string) {
     return markdown.render(source);
@@ -327,6 +428,57 @@ function parseHtmlAttributes(rawAttributes: string) {
 
 function isSafeImageSource(src: string) {
     return /^(https?:\/\/|file:\/\/)/i.test(src);
+}
+
+function findFirstInlineTokenInListItem(
+    tokens: MarkdownToken[],
+    listItemOpenIndex: number
+) {
+    const listItemLevel = tokens[listItemOpenIndex].level;
+
+    for (let index = listItemOpenIndex + 1; index < tokens.length; index += 1) {
+        const token = tokens[index];
+
+        if (token.type === "list_item_close" && token.level === listItemLevel) {
+            return null;
+        }
+
+        if (token.type === "inline" && token.level === listItemLevel + 2) {
+            return token;
+        }
+    }
+
+    return null;
+}
+
+function stripTaskListMarkerFromChildren(
+    inlineToken: MarkdownToken,
+    markerLength: number
+) {
+    let remainingLength = markerLength;
+
+    for (const child of inlineToken.children ?? []) {
+        if (remainingLength === 0) {
+            break;
+        }
+
+        if (child.type !== "text") {
+            break;
+        }
+
+        if (child.content.length <= remainingLength) {
+            remainingLength -= child.content.length;
+            child.content = "";
+            continue;
+        }
+
+        child.content = child.content.slice(remainingLength);
+        remainingLength = 0;
+    }
+
+    inlineToken.children = inlineToken.children?.filter(
+        (child) => child.type !== "text" || child.content.length > 0
+    );
 }
 
 function escapeHtmlAttribute(value: string) {

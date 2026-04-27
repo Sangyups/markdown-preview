@@ -113,6 +113,15 @@ body {
     cursor: pointer;
 }
 
+.markdown-body .task-list-item {
+    list-style: none;
+}
+
+.markdown-body .task-list-item-checkbox {
+    margin: 0 0.45em 0 -1.4em;
+    vertical-align: middle;
+}
+
 .markdown-body img {
     display: block;
     height: auto;

@@ -29,6 +29,12 @@ describe("preview styles", () => {
         expect(previewCss).toContain("cursor: pointer");
     });
 
+    test("styles task-list checkboxes without duplicate list bullets", () => {
+        expect(previewCss).toContain(".markdown-body .task-list-item");
+        expect(previewCss).toContain("list-style: none");
+        expect(previewCss).toContain(".markdown-body .task-list-item-checkbox");
+    });
+
     test("styles syntax highlight token classes", () => {
         expect(previewCss).toContain(".markdown-body .hljs-keyword");
         expect(previewCss).toContain(".markdown-body .hljs-string");

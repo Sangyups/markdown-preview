@@ -2,8 +2,11 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+    paths:
+      - "package.json"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -25,56 +28,43 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Set package version from tag
-        run: |
-          version="${GITHUB_REF_NAME#v}"
-
-          if [ -z "$version" ] || [ "$version" = "$GITHUB_REF_NAME" ]; then
-            echo "Expected a tag like v1.0.0, got: $GITHUB_REF_NAME" >&2
-            exit 1
-          fi
-
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "Tag version must be valid semver, got: $version" >&2
-            exit 1
-          fi
-
-          bun pm pkg set "version=$version"
-          echo "PACKAGE_VERSION=$version" >> "$GITHUB_ENV"
-
       - name: Check
         run: bun run check
 
       - name: Test
         run: bun test
 
-      - name: Build
-        run: bun run build
-
       - name: Pack package
         id: pack
         run: |
-          mkdir -p release-artifacts
-          packed="$(bun pm pack --destination release-artifacts --quiet --ignore-scripts | tail -n 1)"
-          asset="release-artifacts/${packed##*/}"
-
-          if [ ! -f "$asset" ]; then
-            echo "Packed asset not found: $asset" >&2
+          packed="$(bun pm pack --quiet --ignore-scripts | tail -n 1)"
+          
+          if [ -z "$packed" ]; then
+            echo "Failed to pack: no output from bun pm pack" >&2
             exit 1
           fi
+          
+          echo "asset=$packed" >> "$GITHUB_OUTPUT"
 
-          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+      - name: Get version for release
+        id: version
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Create release if needed
+      - name: Create or update release
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
-            gh release create "$GITHUB_REF_NAME" \
-              --title "$GITHUB_REF_NAME" \
-              --generate-notes
+          tag="v${{ steps.version.outputs.version }}"
+          
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release delete "$tag" --yes
+          fi
+          
+          gh release create "$tag" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload package asset
-        run: gh release upload "$GITHUB_REF_NAME" "${{ steps.pack.outputs.asset }}" --clobber
+        run: gh release upload "v${{ steps.version.outputs.version }}" "${{ steps.pack.outputs.asset }}" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

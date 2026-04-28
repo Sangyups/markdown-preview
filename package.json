@@ -1,6 +1,6 @@
 {
     "name": "markdown-preview",
-    "version": "0.1.0",
+    "version": "1.0.1",
     "private": true,
     "bin": {
         "mdp": "./bin/markdown-preview.js"
@@ -17,7 +17,8 @@
         "prepare": "bun run build",
         "check": "biome check README.md biome.json package.json tsconfig.json scripts src test",
         "format": "biome format --write README.md biome.json package.json tsconfig.json scripts src test",
-        "test": "bun test"
+        "test": "bun test",
+        "pack": "bun pm pack"
     },
     "dependencies": {
         "electron": "^41.3.0",

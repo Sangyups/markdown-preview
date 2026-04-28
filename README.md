@@ -208,3 +208,31 @@ and richer window reuse behavior.
 ```bash
 bun unlink
 ```
+
+## Release & Package
+
+### Local Release
+
+```bash
+# Update version (only source of truth)
+vi package.json
+"version": "1.0.2"
+
+# Pack the release
+bun run pack
+
+# Git push (triggers CI/CD automatically)
+git add package.json
+git commit -m "Release 1.0.2"
+git push
+```
+
+### Automated Release (CI/CD)
+
+When `package.json` is pushed to `main`, GitHub Actions automatically:
+1. Runs checks and tests
+2. Packs the release
+3. Creates a GitHub Release with tag `v{version}`
+4. Uploads the `.tgz` artifact
+
+Manual trigger available: Use `workflow_dispatch` in GitHub Actions UI if needed.

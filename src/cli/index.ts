@@ -8,7 +8,7 @@ import { resolveRuntimePath } from "../shared/runtime-path";
 import { parseThemeOverrideOption } from "../shared/theme-override";
 import { buildElectronMainArgs } from "./electron-main-args";
 import { toFilePathCandidates } from "./fzf-candidates";
-import { formatHelpText, shouldShowHelp } from "./help";
+import { formatHelpText, shouldShowHelp, shouldShowVersion } from "./help";
 import { resolveTarget } from "./resolve-target";
 import { runFzf } from "./run-fzf";
 import { scanMarkdownFiles } from "./scan-markdown-files";
@@ -28,10 +28,22 @@ interface SelectedTarget {
 
 const NOOP_CLEANUP = async () => {};
 
+function getVersion(): string {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const packageJson = require("../../package.json");
+    return packageJson.version || "unknown";
+}
+
 async function main() {
     // Check for help flag before any other processing
     if (shouldShowHelp(process.argv.slice(2))) {
         console.log(formatHelpText());
+        process.exit(0);
+    }
+
+    // Check for version flag before any other processing
+    if (shouldShowVersion(process.argv.slice(2))) {
+        console.log(`markdown-preview ${getVersion()}`);
         process.exit(0);
     }
 

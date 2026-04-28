@@ -2,6 +2,10 @@ export function shouldShowHelp(args: string[]): boolean {
     return args.includes("-h") || args.includes("--help");
 }
 
+export function shouldShowVersion(args: string[]): boolean {
+    return args.includes("-v") || args.includes("--version");
+}
+
 export function formatHelpText(): string {
     return `markdown-preview - Terminal-first Markdown previewer
 
@@ -16,6 +20,7 @@ Arguments:
 
 Options:
   -h, --help           Show this help message and exit
+  -v, --version        Show version and exit
   --theme=THEME        Override the configured theme (auto, light, dark)
 
 Examples:

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { formatHelpText, shouldShowHelp } from "../../src/cli/help";
+import {
+    formatHelpText,
+    shouldShowHelp,
+    shouldShowVersion,
+} from "../../src/cli/help";
 
 describe("Help flag detection", () => {
     it("detects --help flag", () => {
@@ -48,5 +52,40 @@ describe("Help text formatting", () => {
     it("produces non-empty help text", () => {
         const help = formatHelpText();
         expect(help.length).toBeGreaterThan(0);
+    });
+});
+
+describe("Version flag detection", () => {
+    it("detects --version flag", () => {
+        expect(shouldShowVersion(["--version"])).toBe(true);
+    });
+
+    it("detects -v flag", () => {
+        expect(shouldShowVersion(["-v"])).toBe(true);
+    });
+
+    it("detects --version in any position", () => {
+        expect(shouldShowVersion(["file.md", "--version"])).toBe(true);
+        expect(shouldShowVersion(["--version", "file.md"])).toBe(true);
+    });
+
+    it("returns false when version flag is not present", () => {
+        expect(shouldShowVersion(["file.md"])).toBe(false);
+        expect(shouldShowVersion(["--theme=dark"])).toBe(false);
+        expect(shouldShowVersion([])).toBe(false);
+    });
+
+    it("distinguishes --version from similar flags", () => {
+        expect(shouldShowVersion(["--versions"])).toBe(false);
+        expect(shouldShowVersion(["--version-info"])).toBe(false);
+        expect(shouldShowVersion(["version"])).toBe(false);
+    });
+});
+
+describe("Version in help text", () => {
+    it("documents version flag in help text", () => {
+        const help = formatHelpText();
+        expect(help).toContain("--version");
+        expect(help).toContain("-v");
     });
 });

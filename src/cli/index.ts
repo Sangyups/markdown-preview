@@ -8,6 +8,7 @@ import { resolveRuntimePath } from "../shared/runtime-path";
 import { parseThemeOverrideOption } from "../shared/theme-override";
 import { buildElectronMainArgs } from "./electron-main-args";
 import { toFilePathCandidates } from "./fzf-candidates";
+import { formatHelpText, shouldShowHelp } from "./help";
 import { resolveTarget } from "./resolve-target";
 import { runFzf } from "./run-fzf";
 import { scanMarkdownFiles } from "./scan-markdown-files";
@@ -28,6 +29,12 @@ interface SelectedTarget {
 const NOOP_CLEANUP = async () => {};
 
 async function main() {
+    // Check for help flag before any other processing
+    if (shouldShowHelp(process.argv.slice(2))) {
+        console.log(formatHelpText());
+        process.exit(0);
+    }
+
     let selectedTarget: SelectedTarget | null = null;
     let exitCode = 0;
 

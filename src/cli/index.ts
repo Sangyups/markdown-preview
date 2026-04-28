@@ -16,6 +16,7 @@ import {
     type StdinLike,
     shouldUseStdinTarget,
 } from "./stdin-target";
+import { shouldShowHelp, formatHelpText } from "./help";
 
 const ARGUMENT_ERROR_EXIT_CODE = 1;
 
@@ -28,6 +29,12 @@ interface SelectedTarget {
 const NOOP_CLEANUP = async () => {};
 
 async function main() {
+    // Check for help flag before any other processing
+    if (shouldShowHelp(process.argv.slice(2))) {
+        console.log(formatHelpText());
+        process.exit(0);
+    }
+
     let selectedTarget: SelectedTarget | null = null;
     let exitCode = 0;
 

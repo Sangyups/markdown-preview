@@ -7,11 +7,20 @@ const darkThemeStart = previewCss.indexOf(
 const globalStylesStart = previewCss.indexOf("* {");
 const rootStyleBlock = previewCss.slice(0, darkThemeStart);
 const darkThemeStyleBlock = previewCss.slice(darkThemeStart, globalStylesStart);
+const tableStyleStart = previewCss.indexOf(".markdown-body table {");
+const tableStyleEnd = previewCss.indexOf(".markdown-body th,", tableStyleStart);
+const tableStyleBlock = previewCss.slice(tableStyleStart, tableStyleEnd);
 
 describe("preview styles", () => {
     test("keeps wide tables inside a dedicated scroll container", () => {
         expect(previewCss).toContain(".table-scroll");
         expect(previewCss).toContain("overflow-x: auto");
+    });
+
+    test("does not force narrow tables to expand to the full preview width", () => {
+        expect(tableStyleBlock).toContain(".markdown-body table");
+        expect(tableStyleBlock).toContain("width: max-content");
+        expect(tableStyleBlock).not.toContain("min-width: 100%");
     });
 
     test("lets the preview shell respond to window width changes", () => {

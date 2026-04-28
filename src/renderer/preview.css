@@ -403,7 +403,6 @@ body {
 .markdown-body table {
     border-collapse: collapse;
     margin: 0;
-    min-width: 100%;
     width: max-content;
 }
 

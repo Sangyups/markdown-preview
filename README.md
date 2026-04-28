@@ -44,10 +44,11 @@ source file remains wherever you want to edit it.
 ### Install From A Shared Package
 
 If you received a packaged `markdown-preview-*.tgz` file, install it globally
-with Bun:
+with Bun. Bun's global install requires an absolute path to the tarball, so run
+the command from the directory containing the file:
 
 ```bash
-bun install -g ./markdown-preview-0.1.0.tgz
+bun install -g "$PWD/markdown-preview-0.1.0.tgz"
 command -v mdp
 ```
 

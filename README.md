@@ -174,13 +174,15 @@ configured theme for that launch only.
 ## What It Renders
 
 - Common Markdown syntax through `markdown-it`
-- YAML and TOML frontmatter rendered as structured metadata tables
+- YAML and TOML frontmatter rendered as structured metadata tables (GitHub-style
+  frontmatter included)
 - Tables with horizontal scrolling
 - Footnotes through standard `[^1]` and `^[inline]` syntax
 - `mermaid` fenced code blocks
 - A conservative raw HTML allowlist for practical Markdown authoring, covering
   common inline formatting, disclosure blocks, simple layout tags, and table
   structure
+- Search within preview with Ctrl+F (or Cmd+F on macOS)
 
 Unsupported raw HTML is escaped so the document remains readable instead of
 breaking the preview.

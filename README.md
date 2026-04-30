@@ -179,6 +179,8 @@ configured theme for that launch only.
 - Tables with horizontal scrolling
 - Footnotes through standard `[^1]` and `^[inline]` syntax
 - `mermaid` fenced code blocks
+- Relative images and links resolved against the Markdown file path for
+  file-based previews
 - A conservative raw HTML allowlist for practical Markdown authoring, covering
   common inline formatting, disclosure blocks, simple layout tags, and table
   structure
@@ -203,8 +205,9 @@ expects that built entrypoint to exist.
 `markdown-preview` is intentionally preview-only. It does not edit files, manage
 tabs, restore sessions, or emulate the full VS Code extension environment.
 
-Planned extension points include relative image/link handling, file glob options,
-and richer window reuse behavior.
+Planned extension points include file glob options and richer window reuse
+behavior. Relative asset resolution is supported for file-based previews; stdin
+input still has no filesystem-relative base path.
 
 ## Remove The Local CLI Link
 
@@ -219,14 +222,14 @@ bun unlink
 ```bash
 # Update version (only source of truth)
 vi package.json
-"version": "1.0.2"
+"version": "<new-version>"
 
 # Pack the release
 bun run pack
 
 # Git push (triggers CI/CD automatically)
 git add package.json
-git commit -m "Release 1.0.2"
+git commit -m "Release <new-version>"
 git push
 ```
 

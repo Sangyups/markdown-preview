@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { pathToFileURL } from "node:url";
 
 import { renderMarkdown } from "../../src/shared/markdown/render-markdown";
 
@@ -72,6 +73,49 @@ describe("renderMarkdown", () => {
         );
         expect(html).toContain('<a href="#section" title="Jump">Jump</a>');
         expect(html).toContain('<a href="docs/page.md">Relative</a>');
+    });
+
+    test("rewrites relative markdown images and links against the document path", () => {
+        const html = renderMarkdown(
+            "![Diagram](./images/diagram.png)\n\n[Spec](../spec.md)",
+            {
+                documentPath: "/tmp/docs/guide/README.md",
+            }
+        );
+
+        expect(html).toContain(
+            `<img src="${pathToFileURL("/tmp/docs/guide/images/diagram.png").href}" alt="Diagram">`
+        );
+        expect(html).toContain(
+            `<a href="${pathToFileURL("/tmp/docs/spec.md").href}">Spec</a>`
+        );
+    });
+
+    test("rewrites relative safe raw html urls against the document path", () => {
+        const html = renderMarkdown(
+            '<img src="./images/diagram.png" alt="Diagram"><a href="../spec.md">Spec</a>',
+            {
+                documentPath: "/tmp/docs/guide/README.md",
+            }
+        );
+
+        expect(html).toContain(
+            `<img src="${pathToFileURL("/tmp/docs/guide/images/diagram.png").href}" alt="Diagram">`
+        );
+        expect(html).toContain(
+            `<a href="${pathToFileURL("/tmp/docs/spec.md").href}">Spec</a>`
+        );
+    });
+
+    test("keeps relative urls unchanged when no document path is provided", () => {
+        const html = renderMarkdown(
+            '![Diagram](./images/diagram.png)\n\n<a href="../spec.md">Spec</a>'
+        );
+
+        expect(html).toContain(
+            '<img src="./images/diagram.png" alt="Diagram">'
+        );
+        expect(html).toContain('<a href="../spec.md">Spec</a>');
     });
 
     test("keeps unsafe inline html attributes escaped", () => {

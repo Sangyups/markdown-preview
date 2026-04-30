@@ -92,7 +92,9 @@ async function buildPreviewPayload(
 ): Promise<PreviewPayload> {
     try {
         const markdownSource = await readFile(filePath, "utf8");
-        const html = renderMarkdown(markdownSource);
+        const html = renderMarkdown(markdownSource, {
+            documentPath: previewSource === "file" ? filePath : undefined,
+        });
 
         return {
             fileName: path.basename(filePath),

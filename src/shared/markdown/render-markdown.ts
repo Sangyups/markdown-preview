@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import hljs from "highlight.js/lib/common";
 import { load as loadToml } from "js-toml";
 import MarkdownIt from "markdown-it";
@@ -11,9 +12,12 @@ type TaskListItemMeta = {
 };
 
 type MarkdownToken = {
+    attrGet: (name: string) => string | null;
     attrJoin: (name: string, value: string) => void;
+    attrSet: (name: string, value: string) => void;
     children?: MarkdownToken[];
     content: string;
+    info?: string;
     level: number;
     meta?: {
         taskListItem?: TaskListItemMeta;
@@ -45,6 +49,14 @@ const rawHtmlStateKey = "__markdownPreviewRawHtmlState";
 
 type RawHtmlEnv = {
     [rawHtmlStateKey]?: RawHtmlState;
+};
+
+type MarkdownRenderEnv = RawHtmlEnv & {
+    documentPath?: string;
+};
+
+type RenderMarkdownOptions = {
+    documentPath?: string;
 };
 
 type FrontmatterLanguage = "toml" | "yaml";
@@ -149,6 +161,14 @@ const renderTableClose =
     markdown.renderer.rules.table_close?.bind(markdown.renderer.rules) ??
     ((tokens, index, options, _env, self) =>
         self.renderToken(tokens, index, options));
+const renderImage =
+    markdown.renderer.rules.image?.bind(markdown.renderer.rules) ??
+    ((tokens, index, options, _env, self) =>
+        self.renderToken(tokens, index, options));
+const renderLinkOpen =
+    markdown.renderer.rules.link_open?.bind(markdown.renderer.rules) ??
+    ((tokens, index, options, _env, self) =>
+        self.renderToken(tokens, index, options));
 const renderParagraphOpen =
     markdown.renderer.rules.paragraph_open?.bind(markdown.renderer.rules) ??
     ((
@@ -240,7 +260,11 @@ markdown.renderer.rules.html_inline = (tokens, index, options, env, self) => {
         );
     }
 
-    const renderedHtml = renderAllowedRawHtml(rawHtml, allowedInlineHtmlTags);
+    const renderedHtml = renderAllowedRawHtml(
+        rawHtml,
+        allowedInlineHtmlTags,
+        getMarkdownRenderEnv(env)
+    );
 
     if (renderedHtml !== null) {
         return renderedHtml;
@@ -261,7 +285,8 @@ markdown.renderer.rules.html_inline = (tokens, index, options, env, self) => {
 markdown.renderer.rules.html_block = (tokens, index, options, env, self) => {
     const renderedHtml = renderAllowedRawHtml(
         tokens[index].content,
-        allowedBlockHtmlTags
+        allowedBlockHtmlTags,
+        getMarkdownRenderEnv(env)
     );
 
     if (renderedHtml !== null) {
@@ -286,6 +311,18 @@ markdown.renderer.rules.table_open = (tokens, index, options, env, self) =>
 
 markdown.renderer.rules.table_close = (tokens, index, options, env, self) =>
     `${renderTableClose(tokens, index, options, env, self)}</div>`;
+
+markdown.renderer.rules.image = (tokens, index, options, env, self) => {
+    rewriteTokenUrl(tokens[index], "src", getMarkdownRenderEnv(env));
+
+    return renderImage(tokens, index, options, env, self);
+};
+
+markdown.renderer.rules.link_open = (tokens, index, options, env, self) => {
+    rewriteTokenUrl(tokens[index], "href", getMarkdownRenderEnv(env));
+
+    return renderLinkOpen(tokens, index, options, env, self);
+};
 
 markdown.renderer.rules.paragraph_open = (
     tokens: MarkdownToken[],
@@ -312,11 +349,15 @@ markdown.renderer.rules.paragraph_open = (
     return `${renderedParagraph}${renderTaskListCheckbox(taskListItem)} `;
 };
 
-export function renderMarkdown(source: string) {
+export function renderMarkdown(
+    source: string,
+    options: RenderMarkdownOptions = {}
+) {
+    const environment = createMarkdownRenderEnvironment(options);
     const frontmatter = extractFrontmatter(source);
 
     if (!frontmatter) {
-        return markdown.render(source);
+        return markdown.render(source, environment);
     }
 
     const renderedFrontmatter = renderFrontmatter(frontmatter);
@@ -326,7 +367,7 @@ export function renderMarkdown(source: string) {
         return renderedFrontmatter;
     }
 
-    return `${renderedFrontmatter}\n${markdown.render(body)}`;
+    return `${renderedFrontmatter}\n${markdown.render(body, environment)}`;
 }
 
 function renderTaskListCheckbox(taskListItem: TaskListItemMeta) {
@@ -549,7 +590,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function renderAllowedRawHtml(
     rawHtml: string,
-    allowedTags: ReadonlySet<string>
+    allowedTags: ReadonlySet<string>,
+    env: MarkdownRenderEnv | null
 ) {
     const htmlTagPattern = /<\/?[A-Za-z][^>]*>/g;
     let cursor = 0;
@@ -566,7 +608,11 @@ function renderAllowedRawHtml(
 
         renderedHtml += textSegment;
 
-        const normalizedTag = normalizeAllowedHtmlTag(matchedTag, allowedTags);
+        const normalizedTag = normalizeAllowedHtmlTag(
+            matchedTag,
+            allowedTags,
+            env
+        );
 
         if (!normalizedTag) {
             return null;
@@ -589,7 +635,8 @@ function renderAllowedRawHtml(
 
 function normalizeAllowedHtmlTag(
     rawTag: string,
-    allowedTags: ReadonlySet<string>
+    allowedTags: ReadonlySet<string>,
+    env: MarkdownRenderEnv | null
 ) {
     const parsedTag = parseHtmlTag(rawTag);
 
@@ -624,7 +671,7 @@ function normalizeAllowedHtmlTag(
             return null;
         }
 
-        return normalizeImageHtmlTag(attributes);
+        return normalizeImageHtmlTag(attributes, env);
     }
 
     if (isSelfClosingTag) {
@@ -640,7 +687,7 @@ function normalizeAllowedHtmlTag(
     }
 
     if (tagName === "a") {
-        return normalizeAnchorHtmlTag(attributes);
+        return normalizeAnchorHtmlTag(attributes, env);
     }
 
     if (tagName === "abbr") {
@@ -756,7 +803,10 @@ function getRawHtmlState(env: unknown): RawHtmlState | null {
     return rawHtmlEnv[rawHtmlStateKey];
 }
 
-function normalizeAnchorHtmlTag(rawAttributes: string) {
+function normalizeAnchorHtmlTag(
+    rawAttributes: string,
+    env: MarkdownRenderEnv | null
+) {
     const attributes = parseHtmlAttributes(rawAttributes);
 
     if (!attributes) {
@@ -778,7 +828,9 @@ function normalizeAnchorHtmlTag(rawAttributes: string) {
                 return null;
             }
 
-            normalizedAttributes.push(`href="${escapeHtmlAttribute(value)}"`);
+            normalizedAttributes.push(
+                `href="${escapeHtmlAttribute(normalizePreviewUrl(value, env))}"`
+            );
             continue;
         }
 
@@ -916,7 +968,10 @@ function normalizeTableCellHtmlTag(tagName: string, rawAttributes: string) {
         : `<${tagName}>`;
 }
 
-function normalizeImageHtmlTag(rawAttributes: string) {
+function normalizeImageHtmlTag(
+    rawAttributes: string,
+    env: MarkdownRenderEnv | null
+) {
     const attributes = parseHtmlAttributes(rawAttributes);
 
     if (!attributes) {
@@ -938,7 +993,9 @@ function normalizeImageHtmlTag(rawAttributes: string) {
                 return null;
             }
 
-            normalizedAttributes.push(`src="${escapeHtmlAttribute(value)}"`);
+            normalizedAttributes.push(
+                `src="${escapeHtmlAttribute(normalizePreviewUrl(value, env))}"`
+            );
             continue;
         }
 
@@ -1030,6 +1087,52 @@ function isSafeLinkHref(href: string) {
     }
 
     return !/^[A-Za-z][A-Za-z0-9+.-]*:/i.test(href);
+}
+
+function createMarkdownRenderEnvironment(
+    options: RenderMarkdownOptions
+): MarkdownRenderEnv {
+    return {
+        documentPath: options.documentPath,
+    };
+}
+
+function getMarkdownRenderEnv(env: unknown): MarkdownRenderEnv | null {
+    if (!env || typeof env !== "object") {
+        return null;
+    }
+
+    return env as MarkdownRenderEnv;
+}
+
+function rewriteTokenUrl(
+    token: MarkdownToken,
+    attributeName: "href" | "src",
+    env: MarkdownRenderEnv | null
+) {
+    const value = token.attrGet(attributeName);
+
+    if (!value) {
+        return;
+    }
+
+    token.attrSet(attributeName, normalizePreviewUrl(value, env));
+}
+
+function normalizePreviewUrl(value: string, env: MarkdownRenderEnv | null) {
+    if (!env?.documentPath || !isRelativePreviewUrl(value)) {
+        return value;
+    }
+
+    return new URL(value, pathToFileURL(env.documentPath)).href;
+}
+
+function isRelativePreviewUrl(value: string) {
+    if (value.length === 0 || value.startsWith("//") || value.startsWith("#")) {
+        return false;
+    }
+
+    return !/^[A-Za-z][A-Za-z0-9+.-]*:/i.test(value);
 }
 
 function findFirstInlineTokenInListItem(

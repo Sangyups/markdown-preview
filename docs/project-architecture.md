@@ -177,6 +177,8 @@ rule을 추가합니다.
 - `markdown-it-footnote`로 표준 footnote 문법을 footnote section으로 변환합니다.
 - `mermaid` fenced code block을 renderer용 placeholder HTML로 변환합니다.
 - table을 `.table-scroll` wrapper로 감쌉니다.
+- file preview일 때 Markdown 문서 경로를 기준으로 상대 `href`/`src`를
+  `file://` URL로 정규화합니다.
 - raw HTML은 allowlist를 통과한 태그만 유지합니다.
 - allowlist 밖 HTML은 escape합니다.
 
@@ -188,10 +190,13 @@ rule을 추가합니다.
 | block | `blockquote`, `caption`, `center`, `details`, `div`, `figcaption`, `figure`, `h1`-`h6`, `hr`, `li`, `ol`, `p`, `pre`, `section`, `table`, `tbody`, `td`, `tfoot`, `th`, `thead`, `tr`, `ul`, inline allowlist 전체 |
 
 `img`는 `src`, `alt`, `title`, `width`, `height`만 허용합니다. `src`는 `http://`,
-`https://`, `file://`, 상대 경로를 허용합니다.
+`https://`, `file://`, 상대 경로를 허용하며 file preview에서는 상대 경로가
+문서 기준 `file://` URL로 변환됩니다.
 
 `a`는 safe `href`가 필수이며 `http://`, `https://`, `mailto:`, anchor, 상대
-경로만 허용합니다. `title`은 선택적으로 허용합니다.
+경로만 허용합니다. `title`은 선택적으로 허용하며 file preview에서는 상대
+경로가 문서 기준 `file://` URL로 변환됩니다. stdin preview는 문서 경로가
+없어서 상대 경로를 그대로 둡니다.
 
 `abbr`은 선택적으로 `title`만 허용합니다.
 

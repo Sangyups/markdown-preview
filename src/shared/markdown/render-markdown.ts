@@ -1,6 +1,8 @@
 import hljs from "highlight.js/lib/common";
+import { load as loadToml } from "js-toml";
 import MarkdownIt from "markdown-it";
 import markdownItFootnote from "markdown-it-footnote";
+import { parse as parseYaml } from "yaml";
 
 import { encodeMermaidSource, isMermaidFence } from "./extract-mermaid-blocks";
 
@@ -43,6 +45,21 @@ const rawHtmlStateKey = "__markdownPreviewRawHtmlState";
 
 type RawHtmlEnv = {
     [rawHtmlStateKey]?: RawHtmlState;
+};
+
+type FrontmatterLanguage = "toml" | "yaml";
+
+type FrontmatterPrimitive = boolean | number | string | null;
+
+type FrontmatterValue =
+    | FrontmatterPrimitive
+    | FrontmatterValue[]
+    | Record<string, FrontmatterValue>;
+
+type ParsedFrontmatter = {
+    body: string;
+    content: string;
+    language: FrontmatterLanguage;
 };
 
 const markdown = new MarkdownIt({
@@ -296,7 +313,20 @@ markdown.renderer.rules.paragraph_open = (
 };
 
 export function renderMarkdown(source: string) {
-    return markdown.render(source);
+    const frontmatter = extractFrontmatter(source);
+
+    if (!frontmatter) {
+        return markdown.render(source);
+    }
+
+    const renderedFrontmatter = renderFrontmatter(frontmatter);
+    const body = frontmatter.body.replace(/^\r?\n/, "");
+
+    if (body.length === 0) {
+        return renderedFrontmatter;
+    }
+
+    return `${renderedFrontmatter}\n${markdown.render(body)}`;
 }
 
 function renderTaskListCheckbox(taskListItem: TaskListItemMeta) {
@@ -319,6 +349,202 @@ function highlightCode(source: string, language: string) {
         : "";
 
     return `<pre><code class="hljs${languageClass}">${highlightedCode}</code></pre>`;
+}
+
+function extractFrontmatter(source: string): ParsedFrontmatter | null {
+    const matchedFrontmatter = source.match(
+        /^(?:\uFEFF)?(---|\+\+\+)[\t ]*\r?\n([\s\S]*?)\r?\n\1(?:\r?\n|$)/
+    );
+
+    if (!matchedFrontmatter) {
+        return null;
+    }
+
+    const [, delimiter, content] = matchedFrontmatter;
+
+    if (!looksLikeFrontmatterContent(content, delimiter)) {
+        return null;
+    }
+
+    return {
+        body: source.slice(matchedFrontmatter[0].length),
+        content,
+        language: delimiter === "---" ? "yaml" : "toml",
+    };
+}
+
+function looksLikeFrontmatterContent(
+    content: string,
+    delimiter: string
+): boolean {
+    const meaningfulLines = content
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0 && !line.startsWith("#"));
+
+    if (meaningfulLines.length === 0) {
+        return false;
+    }
+
+    if (delimiter === "---") {
+        return meaningfulLines.some((line) =>
+            /^[A-Za-z0-9_.-]+(?:\s*:\s*.*)?$/.test(line)
+        );
+    }
+
+    return meaningfulLines.some((line) => /^[A-Za-z0-9_.-]+\s*=/.test(line));
+}
+
+function renderFrontmatter(frontmatter: ParsedFrontmatter) {
+    const parsedFrontmatter = parseFrontmatterRecord(
+        frontmatter.content,
+        frontmatter.language
+    );
+
+    if (!parsedFrontmatter) {
+        return highlightCode(frontmatter.content, frontmatter.language);
+    }
+
+    const rows = Object.entries(parsedFrontmatter)
+        .map(
+            ([key, value]) =>
+                `<tr><th>${escapeHtmlText(key)}</th><td>${renderFrontmatterValue(value)}</td></tr>`
+        )
+        .join("");
+
+    return [
+        '<div class="table-scroll frontmatter-scroll">',
+        '<table class="frontmatter-table">',
+        `<tbody>${rows}</tbody>`,
+        "</table>",
+        "</div>",
+    ].join("");
+}
+
+function parseFrontmatterRecord(
+    content: string,
+    language: FrontmatterLanguage
+): Record<string, FrontmatterValue> | null {
+    try {
+        const parsedValue =
+            language === "yaml" ? parseYaml(content) : loadToml(content);
+        const normalizedValue = normalizeFrontmatterValue(parsedValue);
+
+        return isFrontmatterRecord(normalizedValue) ? normalizedValue : null;
+    } catch (error) {
+        if (error instanceof Error) {
+            return null;
+        }
+
+        throw error;
+    }
+}
+
+function normalizeFrontmatterValue(value: unknown): FrontmatterValue | null {
+    if (
+        value === null ||
+        typeof value === "boolean" ||
+        typeof value === "number" ||
+        typeof value === "string"
+    ) {
+        return value;
+    }
+
+    if (Array.isArray(value)) {
+        const normalizedItems = value.map(normalizeFrontmatterValue);
+
+        if (normalizedItems.some((item) => item === null)) {
+            return null;
+        }
+
+        return normalizedItems;
+    }
+
+    if (isRecord(value)) {
+        const normalizedEntries = Object.entries(value).map(
+            ([key, entryValue]) =>
+                [key, normalizeFrontmatterValue(entryValue)] as const
+        );
+
+        if (normalizedEntries.some(([, entryValue]) => entryValue === null)) {
+            return null;
+        }
+
+        return Object.fromEntries(normalizedEntries) as Record<
+            string,
+            FrontmatterValue
+        >;
+    }
+
+    return null;
+}
+
+function renderFrontmatterValue(value: FrontmatterValue): string {
+    if (
+        value === null ||
+        typeof value === "boolean" ||
+        typeof value === "number" ||
+        typeof value === "string"
+    ) {
+        return escapeHtmlText(String(value));
+    }
+
+    if (Array.isArray(value)) {
+        return renderFrontmatterList(
+            value.map((item) => renderFrontmatterListItem(item))
+        );
+    }
+
+    return renderFrontmatterList(
+        Object.entries(value).map(
+            ([key, item]) =>
+                `<strong>${escapeHtmlText(key)}</strong>${renderFrontmatterNestedValue(item)}`
+        )
+    );
+}
+
+function renderFrontmatterList(items: string[]) {
+    return `<ul class="frontmatter-list">${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+}
+
+function renderFrontmatterListItem(value: FrontmatterValue): string {
+    if (
+        value === null ||
+        typeof value === "boolean" ||
+        typeof value === "number" ||
+        typeof value === "string"
+    ) {
+        return escapeHtmlText(String(value));
+    }
+
+    return renderFrontmatterValue(value);
+}
+
+function renderFrontmatterNestedValue(value: FrontmatterValue): string {
+    if (
+        value === null ||
+        typeof value === "boolean" ||
+        typeof value === "number" ||
+        typeof value === "string"
+    ) {
+        return `: ${escapeHtmlText(String(value))}`;
+    }
+
+    return renderFrontmatterValue(value);
+}
+
+function escapeHtmlText(value: string) {
+    return markdown.utils.escapeHtml(value);
+}
+
+function isFrontmatterRecord(
+    value: FrontmatterValue | null
+): value is Record<string, FrontmatterValue> {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function renderAllowedRawHtml(

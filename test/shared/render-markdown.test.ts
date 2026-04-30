@@ -306,4 +306,73 @@ describe("renderMarkdown", () => {
         expect(html).toContain("Inline text");
         expect(html).not.toContain("^[Inline text]");
     });
+
+    test("renders yaml frontmatter as structured metadata before the markdown body", () => {
+        const html = renderMarkdown(
+            [
+                "---",
+                "title: Hello",
+                "shortTitle: Hi",
+                "---",
+                "",
+                "# Heading",
+            ].join("\n")
+        );
+
+        expect(html).toContain('<div class="table-scroll frontmatter-scroll">');
+        expect(html).toContain('<table class="frontmatter-table">');
+        expect(html).toContain("<th>title</th>");
+        expect(html).toContain("<td>Hello</td>");
+        expect(html).toContain("<th>shortTitle</th>");
+        expect(html).toContain("<td>Hi</td>");
+        expect(html).toContain("<h1>Heading</h1>");
+        expect(html).not.toContain('<code class="hljs language-yaml">');
+    });
+
+    test("renders nested metadata values from frontmatter in structured rows", () => {
+        const html = renderMarkdown(
+            [
+                "---",
+                "title: Hello",
+                "versions:",
+                "  fpt: '*'",
+                "  ghes: '>=3.11'",
+                "redirect_from:",
+                "  - /one",
+                "  - /two",
+                "---",
+                "",
+                "# Heading",
+            ].join("\n")
+        );
+
+        expect(html).toContain('<ul class="frontmatter-list">');
+        expect(html).toContain("<strong>fpt</strong>: *");
+        expect(html).toContain("<strong>ghes</strong>: &gt;=3.11");
+        expect(html).toContain("<li>/one</li>");
+        expect(html).toContain("<li>/two</li>");
+        expect(html).toContain("<h1>Heading</h1>");
+        expect(html).not.toContain('<code class="hljs language-yaml">');
+    });
+
+    test("renders toml frontmatter as structured metadata before the markdown body", () => {
+        const html = renderMarkdown(
+            [
+                "+++",
+                'title = "Hello"',
+                "draft = true",
+                "+++",
+                "",
+                "# Heading",
+            ].join("\n")
+        );
+
+        expect(html).toContain('<table class="frontmatter-table">');
+        expect(html).toContain("<th>title</th>");
+        expect(html).toContain("<td>Hello</td>");
+        expect(html).toContain("<th>draft</th>");
+        expect(html).toContain("<td>true</td>");
+        expect(html).toContain("<h1>Heading</h1>");
+        expect(html).not.toContain('<code class="hljs language-toml">');
+    });
 });

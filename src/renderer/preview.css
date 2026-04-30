@@ -426,6 +426,25 @@ body {
     white-space: break-spaces;
 }
 
+.markdown-body .frontmatter-table {
+    min-width: 100%;
+    width: 100%;
+}
+
+.markdown-body .frontmatter-table th {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.markdown-body .frontmatter-list {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.markdown-body .frontmatter-list li:last-child {
+    margin-bottom: 0;
+}
+
 .mermaid-block {
     background: var(--preview-mermaid-background);
     border: 1px solid var(--preview-mermaid-border);

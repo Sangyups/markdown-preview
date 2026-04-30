@@ -174,6 +174,7 @@ configured theme for that launch only.
 ## What It Renders
 
 - Common Markdown syntax through `markdown-it`
+- YAML and TOML frontmatter rendered as structured metadata tables
 - Tables with horizontal scrolling
 - Footnotes through standard `[^1]` and `^[inline]` syntax
 - `mermaid` fenced code blocks

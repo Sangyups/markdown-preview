@@ -23,6 +23,12 @@ describe("preview styles", () => {
         expect(tableStyleBlock).not.toContain("min-width: 100%");
     });
 
+    test("lets frontmatter metadata tables use the full preview width", () => {
+        expect(previewCss).toContain(".markdown-body .frontmatter-table");
+        expect(previewCss).toContain("min-width: 100%");
+        expect(previewCss).toContain(".markdown-body .frontmatter-list");
+    });
+
     test("lets the preview shell respond to window width changes", () => {
         expect(previewCss).not.toContain("max-width: 1400px;");
         expect(previewCss).toContain("width: 100%");

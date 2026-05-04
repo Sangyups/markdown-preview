@@ -313,6 +313,10 @@ body {
     font-size: var(--preview-monospace-font-size);
 }
 
+.markdown-body :where(h1, h2, h3, h4, h5, h6) code {
+    font-size: 1em;
+}
+
 .markdown-body :not(pre) > code {
     background: var(--preview-inline-code-background);
     border-radius: 6px;

@@ -399,6 +399,50 @@ describe("renderMarkdown", () => {
         expect(html).not.toContain('<code class="hljs language-yaml">');
     });
 
+    test("renders inline markdown inside frontmatter string values", () => {
+        const html = renderMarkdown(
+            [
+                "---",
+                'title: "**Hello** `team`"',
+                'summary: "See [Spec](../spec.md)"',
+                "---",
+            ].join("\n"),
+            {
+                documentPath: "/tmp/docs/guide/README.md",
+            }
+        );
+
+        expect(html).toContain("<th>title</th>");
+        expect(html).toContain("<strong>Hello</strong>");
+        expect(html).toContain("<code>team</code>");
+        expect(html).toContain("<th>summary</th>");
+        expect(html).toContain(
+            `<a href="${pathToFileURL("/tmp/docs/spec.md").href}">Spec</a>`
+        );
+    });
+
+    test("renders inline markdown inside nested frontmatter values", () => {
+        const html = renderMarkdown(
+            [
+                "---",
+                "versions:",
+                '  ghes: "**>=3.11**"',
+                "redirect_from:",
+                '  - "[One](./one.md)"',
+                "---",
+            ].join("\n"),
+            {
+                documentPath: "/tmp/docs/guide/README.md",
+            }
+        );
+
+        expect(html).toContain("<strong>ghes</strong>");
+        expect(html).toContain("<strong>&gt;=3.11</strong>");
+        expect(html).toContain(
+            `<a href="${pathToFileURL("/tmp/docs/guide/one.md").href}">One</a>`
+        );
+    });
+
     test("renders toml frontmatter as structured metadata before the markdown body", () => {
         const html = renderMarkdown(
             [

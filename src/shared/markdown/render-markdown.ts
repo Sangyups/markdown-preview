@@ -360,7 +360,7 @@ export function renderMarkdown(
         return markdown.render(source, environment);
     }
 
-    const renderedFrontmatter = renderFrontmatter(frontmatter);
+    const renderedFrontmatter = renderFrontmatter(frontmatter, environment);
     const body = frontmatter.body.replace(/^\r?\n/, "");
 
     if (body.length === 0) {
@@ -436,7 +436,10 @@ function looksLikeFrontmatterContent(
     return meaningfulLines.some((line) => /^[A-Za-z0-9_.-]+\s*=/.test(line));
 }
 
-function renderFrontmatter(frontmatter: ParsedFrontmatter) {
+function renderFrontmatter(
+    frontmatter: ParsedFrontmatter,
+    env: MarkdownRenderEnv
+) {
     const parsedFrontmatter = parseFrontmatterRecord(
         frontmatter.content,
         frontmatter.language
@@ -449,7 +452,7 @@ function renderFrontmatter(frontmatter: ParsedFrontmatter) {
     const rows = Object.entries(parsedFrontmatter)
         .map(
             ([key, value]) =>
-                `<tr><th>${escapeHtmlText(key)}</th><td>${renderFrontmatterValue(value)}</td></tr>`
+                `<tr><th>${escapeHtmlText(key)}</th><td>${renderFrontmatterValue(value, env)}</td></tr>`
         )
         .join("");
 
@@ -520,26 +523,29 @@ function normalizeFrontmatterValue(value: unknown): FrontmatterValue | null {
     return null;
 }
 
-function renderFrontmatterValue(value: FrontmatterValue): string {
+function renderFrontmatterValue(
+    value: FrontmatterValue,
+    env: MarkdownRenderEnv
+): string {
     if (
         value === null ||
         typeof value === "boolean" ||
         typeof value === "number" ||
         typeof value === "string"
     ) {
-        return escapeHtmlText(String(value));
+        return renderFrontmatterPrimitive(value, env);
     }
 
     if (Array.isArray(value)) {
         return renderFrontmatterList(
-            value.map((item) => renderFrontmatterListItem(item))
+            value.map((item) => renderFrontmatterListItem(item, env))
         );
     }
 
     return renderFrontmatterList(
         Object.entries(value).map(
             ([key, item]) =>
-                `<strong>${escapeHtmlText(key)}</strong>${renderFrontmatterNestedValue(item)}`
+                `<strong>${escapeHtmlText(key)}</strong>${renderFrontmatterNestedValue(item, env)}`
         )
     );
 }
@@ -548,30 +554,47 @@ function renderFrontmatterList(items: string[]) {
     return `<ul class="frontmatter-list">${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
 }
 
-function renderFrontmatterListItem(value: FrontmatterValue): string {
+function renderFrontmatterListItem(
+    value: FrontmatterValue,
+    env: MarkdownRenderEnv
+): string {
     if (
         value === null ||
         typeof value === "boolean" ||
         typeof value === "number" ||
         typeof value === "string"
     ) {
+        return renderFrontmatterPrimitive(value, env);
+    }
+
+    return renderFrontmatterValue(value, env);
+}
+
+function renderFrontmatterNestedValue(
+    value: FrontmatterValue,
+    env: MarkdownRenderEnv
+): string {
+    if (
+        value === null ||
+        typeof value === "boolean" ||
+        typeof value === "number" ||
+        typeof value === "string"
+    ) {
+        return `: ${renderFrontmatterPrimitive(value, env)}`;
+    }
+
+    return renderFrontmatterValue(value, env);
+}
+
+function renderFrontmatterPrimitive(
+    value: FrontmatterPrimitive,
+    env: MarkdownRenderEnv
+) {
+    if (typeof value !== "string") {
         return escapeHtmlText(String(value));
     }
 
-    return renderFrontmatterValue(value);
-}
-
-function renderFrontmatterNestedValue(value: FrontmatterValue): string {
-    if (
-        value === null ||
-        typeof value === "boolean" ||
-        typeof value === "number" ||
-        typeof value === "string"
-    ) {
-        return `: ${escapeHtmlText(String(value))}`;
-    }
-
-    return renderFrontmatterValue(value);
+    return markdown.renderInline(value, env);
 }
 
 function escapeHtmlText(value: string) {

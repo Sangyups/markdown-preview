@@ -113,30 +113,30 @@ export function toElectronThemeSource(appTheme: AppTheme): ElectronThemeSource {
 }
 
 function readFontFamilyStack(value: unknown, fallback: string[]) {
-    if (typeof value !== "string") {
-        if (!Array.isArray(value) || value.length === 0) {
-            return fallback;
-        }
+    if (typeof value === "string") {
+        const trimmedValue = value.trim();
 
-        const normalizedValues = value
-            .map((familyName) =>
-                typeof familyName === "string" ? familyName.trim() : null
-            )
-            .filter((familyName): familyName is string => familyName !== null);
-
-        if (
-            normalizedValues.length !== value.length ||
-            normalizedValues.some((familyName) => familyName.length === 0)
-        ) {
-            return fallback;
-        }
-
-        return normalizedValues;
+        return trimmedValue.length > 0 ? [trimmedValue] : fallback;
     }
 
-    const trimmedValue = value.trim();
+    if (!Array.isArray(value) || value.length === 0) {
+        return fallback;
+    }
 
-    return trimmedValue.length > 0 ? [trimmedValue] : fallback;
+    const normalizedValues = value
+        .map((familyName) =>
+            typeof familyName === "string" ? familyName.trim() : null
+        )
+        .filter((familyName): familyName is string => familyName !== null);
+
+    if (
+        normalizedValues.length !== value.length ||
+        normalizedValues.some((familyName) => familyName.length === 0)
+    ) {
+        return fallback;
+    }
+
+    return normalizedValues;
 }
 
 function readPositiveInteger(value: unknown, key: "height" | "width") {
@@ -167,7 +167,7 @@ export function isAppTheme(value: string): value is AppTheme {
 function formatFontFamilyName(fontFamilyName: string) {
     return GENERIC_FONT_FAMILIES.has(fontFamilyName)
         ? fontFamilyName
-        : `"${fontFamilyName.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+        : toTomlString(fontFamilyName);
 }
 
 async function writeDefaultConfig(configFilePath: string) {

@@ -1,5 +1,6 @@
 import mermaid from "mermaid";
 
+import { toErrorMessage } from "../shared/error-message";
 import { decodeMermaidSource } from "../shared/markdown/extract-mermaid-blocks";
 
 type MermaidTheme = "dark" | "default";
@@ -8,11 +9,15 @@ let activeMermaidTheme: MermaidTheme | null = null;
 let nextDiagramId = 0;
 
 export async function renderMermaidBlocks(rootElement: ParentNode) {
-    initializeMermaid();
-
     const mermaidBlocks = Array.from(
         rootElement.querySelectorAll<HTMLElement>("[data-mermaid-source]")
     );
+
+    if (mermaidBlocks.length === 0) {
+        return;
+    }
+
+    initializeMermaid();
 
     await Promise.all(
         mermaidBlocks.map((mermaidBlock) => renderMermaidBlock(mermaidBlock))
@@ -81,14 +86,9 @@ async function renderMermaidBlock(mermaidBlock: HTMLElement) {
         mermaidBlock.dataset.mermaidState = "error";
         diagramContainer.innerHTML = "";
         errorContainer.hidden = false;
-        errorContainer.textContent = toErrorMessage(error);
+        errorContainer.textContent = toErrorMessage(
+            error,
+            "Mermaid rendering failed."
+        );
     }
-}
-
-function toErrorMessage(error: unknown) {
-    if (error instanceof Error) {
-        return error.message;
-    }
-
-    return "Mermaid rendering failed.";
 }

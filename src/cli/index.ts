@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import electronPath from "electron";
 
 import type { AppTheme } from "../shared/config";
+import { toErrorMessage } from "../shared/error-message";
 import type { PreviewSource } from "../shared/preview-source";
 import { resolveRuntimePath } from "../shared/runtime-path";
 import { parseThemeOverrideOption } from "../shared/theme-override";
@@ -35,13 +36,11 @@ function getVersion(): string {
 }
 
 async function main() {
-    // Check for help flag before any other processing
     if (shouldShowHelp(process.argv.slice(2))) {
         console.log(formatHelpText());
         process.exit(0);
     }
 
-    // Check for version flag before any other processing
     if (shouldShowVersion(process.argv.slice(2))) {
         console.log(`markdown-preview ${getVersion()}`);
         process.exit(0);
@@ -112,23 +111,20 @@ async function selectTarget(
         toFilePathCandidates(resolvedTarget.directoryPath, markdownFiles)
     );
 
-    if (selection.kind === "selected") {
-        return {
-            cleanup: NOOP_CLEANUP,
-            filePath: selection.value,
-            source: "file",
-        };
+    switch (selection.kind) {
+        case "selected":
+            return {
+                cleanup: NOOP_CLEANUP,
+                filePath: selection.value,
+                source: "file",
+            };
+        case "cancelled":
+            return null;
+        case "missing":
+            throw new Error("fzf is required but was not found in PATH.");
+        case "error":
+            throw new Error(selection.message);
     }
-
-    if (selection.kind === "missing") {
-        throw new Error("fzf is required but was not found in PATH.");
-    }
-
-    if (selection.kind === "error") {
-        throw new Error(selection.message);
-    }
-
-    return null;
 }
 
 function openPreviewWindow(
@@ -160,14 +156,6 @@ function openPreviewWindow(
             resolve(code ?? 0);
         });
     });
-}
-
-function toErrorMessage(error: unknown) {
-    if (error instanceof Error) {
-        return error.message;
-    }
-
-    return "Unknown error.";
 }
 
 void main();

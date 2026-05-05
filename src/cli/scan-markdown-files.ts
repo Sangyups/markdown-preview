@@ -6,17 +6,33 @@ const IGNORED_DIRECTORY_NAMES = new Set([".git", "node_modules"]);
 export async function scanMarkdownFiles(
     rootDirectory: string
 ): Promise<string[]> {
-    const files: string[] = [];
+    const files = await walkDirectory(rootDirectory);
 
-    await walkDirectory(rootDirectory, files);
+    return files
+        .map((filePath) => {
+            const relativePath = path.relative(rootDirectory, filePath);
+            return {
+                depth: relativePath.split(path.sep).length,
+                filePath,
+                relativePath,
+            };
+        })
+        .sort((left, right) => {
+            const depthDifference = left.depth - right.depth;
 
-    return files.sort((left, right) =>
-        compareMarkdownPaths(rootDirectory, left, right)
-    );
+            if (depthDifference !== 0) {
+                return depthDifference;
+            }
+
+            return left.relativePath.localeCompare(right.relativePath);
+        })
+        .map((entry) => entry.filePath);
 }
 
-async function walkDirectory(directoryPath: string, files: string[]) {
+async function walkDirectory(directoryPath: string): Promise<string[]> {
     const entries = await readdir(directoryPath, { withFileTypes: true });
+    const files: string[] = [];
+    const subdirectoryWalks: Promise<string[]>[] = [];
 
     for (const entry of entries) {
         const entryPath = path.join(directoryPath, entry.name);
@@ -26,7 +42,7 @@ async function walkDirectory(directoryPath: string, files: string[]) {
                 continue;
             }
 
-            await walkDirectory(entryPath, files);
+            subdirectoryWalks.push(walkDirectory(entryPath));
             continue;
         }
 
@@ -34,6 +50,14 @@ async function walkDirectory(directoryPath: string, files: string[]) {
             files.push(entryPath);
         }
     }
+
+    const subdirectoryResults = await Promise.all(subdirectoryWalks);
+
+    for (const subdirectoryFiles of subdirectoryResults) {
+        files.push(...subdirectoryFiles);
+    }
+
+    return files;
 }
 
 function shouldIgnoreDirectory(directoryName: string) {
@@ -41,25 +65,4 @@ function shouldIgnoreDirectory(directoryName: string) {
         IGNORED_DIRECTORY_NAMES.has(directoryName) ||
         directoryName.startsWith(".")
     );
-}
-
-function compareMarkdownPaths(
-    rootDirectory: string,
-    left: string,
-    right: string
-) {
-    const leftRelativePath = path.relative(rootDirectory, left);
-    const rightRelativePath = path.relative(rootDirectory, right);
-    const depthDifference =
-        pathDepth(leftRelativePath) - pathDepth(rightRelativePath);
-
-    if (depthDifference !== 0) {
-        return depthDifference;
-    }
-
-    return leftRelativePath.localeCompare(rightRelativePath);
-}
-
-function pathDepth(relativePath: string) {
-    return relativePath.split(path.sep).length;
 }

@@ -30,9 +30,17 @@ describe("renderMermaidBlocks", () => {
             matches: query === "(prefers-color-scheme: dark)",
         })) as unknown as typeof globalThis.matchMedia;
 
+        const mermaidBlock = {
+            dataset: {
+                mermaidSource: encodeMermaidSource("graph TD;A-->B;"),
+            },
+            querySelector() {
+                return null;
+            },
+        } as unknown as HTMLElement;
         const rootElement = {
             querySelectorAll() {
-                return [];
+                return [mermaidBlock];
             },
         } as unknown as ParentNode;
 
@@ -47,6 +55,27 @@ describe("renderMermaidBlocks", () => {
                 theme: "dark",
             })
         );
+    });
+
+    test("skips Mermaid initialization when no diagrams are present", async () => {
+        const matchMediaSpy = mock(() => ({ matches: false }));
+        globalThis.matchMedia =
+            matchMediaSpy as unknown as typeof globalThis.matchMedia;
+
+        const rootElement = {
+            querySelectorAll() {
+                return [];
+            },
+        } as unknown as ParentNode;
+
+        const { renderMermaidBlocks } = await import(
+            "../../src/renderer/render-mermaid"
+        );
+
+        await renderMermaidBlocks(rootElement);
+
+        expect(initialize).not.toHaveBeenCalled();
+        expect(matchMediaSpy).not.toHaveBeenCalled();
     });
 
     test("renders Mermaid diagrams and clears previous errors on success", async () => {

@@ -1,3 +1,4 @@
+import { toErrorMessage } from "../shared/error-message";
 import { renderPreview } from "./render-preview";
 import { initializePreviewSearch } from "./search";
 
@@ -19,16 +20,9 @@ async function bootstrap() {
 
         if (previewElement) {
             previewElement.innerHTML = `<section class="preview-error" role="alert"><h2>Renderer failed</h2><p>${toErrorMessage(
-                error
+                error,
+                "Unknown renderer error."
             )}</p></section>`;
         }
     }
-}
-
-function toErrorMessage(error: unknown) {
-    if (error instanceof Error) {
-        return error.message;
-    }
-
-    return "Unknown renderer error.";
 }

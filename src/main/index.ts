@@ -8,6 +8,7 @@ import {
     toCssFontFamilyValue,
     toElectronThemeSource,
 } from "../shared/config";
+import { toErrorMessage } from "../shared/error-message";
 import { renderMarkdown } from "../shared/markdown/render-markdown";
 import {
     type PreviewSource,
@@ -17,7 +18,7 @@ import {
     applyThemeOverride,
     parseThemeOverrideOption,
 } from "../shared/theme-override";
-import type { PreviewPayload } from "../shared/types";
+import type { PreviewPayload, PreviewPreferences } from "../shared/types";
 import { createWindow } from "./create-window";
 import { registerFindIpc, registerPreviewIpc, sendPreviewUpdate } from "./ipc";
 import { buildPreviewStatus } from "./preview-status";
@@ -90,6 +91,9 @@ async function buildPreviewPayload(
     appConfig: AppConfig,
     previewSource: PreviewSource
 ): Promise<PreviewPayload> {
+    const fileName = path.basename(filePath);
+    const preferences = toPreviewPreferences(appConfig);
+
     try {
         const markdownSource = await readFile(filePath, "utf8");
         const html = renderMarkdown(markdownSource, {
@@ -97,17 +101,10 @@ async function buildPreviewPayload(
         });
 
         return {
-            fileName: path.basename(filePath),
+            fileName,
             filePath,
             html,
-            preferences: {
-                fontFamily: toCssFontFamilyValue(appConfig.fontFamily),
-                fontSize: appConfig.fontSize,
-                monospaceFontFamily: toCssFontFamilyValue(
-                    appConfig.monospaceFontFamily
-                ),
-                monospaceFontSize: appConfig.monospaceFontSize,
-            },
+            preferences,
             status: buildPreviewStatus(previewSource),
             updatedAt: Date.now(),
         };
@@ -115,17 +112,10 @@ async function buildPreviewPayload(
         const message = toErrorMessage(error);
 
         return {
-            fileName: path.basename(filePath),
+            fileName,
             filePath,
             html: renderPreviewError(message),
-            preferences: {
-                fontFamily: toCssFontFamilyValue(appConfig.fontFamily),
-                fontSize: appConfig.fontSize,
-                monospaceFontFamily: toCssFontFamilyValue(
-                    appConfig.monospaceFontFamily
-                ),
-                monospaceFontSize: appConfig.monospaceFontSize,
-            },
+            preferences,
             status: {
                 message,
                 tone: "error",
@@ -133,6 +123,17 @@ async function buildPreviewPayload(
             updatedAt: Date.now(),
         };
     }
+}
+
+function toPreviewPreferences(appConfig: AppConfig): PreviewPreferences {
+    return {
+        fontFamily: toCssFontFamilyValue(appConfig.fontFamily),
+        fontSize: appConfig.fontSize,
+        monospaceFontFamily: toCssFontFamilyValue(
+            appConfig.monospaceFontFamily
+        ),
+        monospaceFontSize: appConfig.monospaceFontSize,
+    };
 }
 
 function parseTargetPath(argv: string[]) {
@@ -164,12 +165,4 @@ function renderPreviewError(message: string) {
         `<p>${escapedMessage}</p>`,
         "</section>",
     ].join("");
-}
-
-function toErrorMessage(error: unknown) {
-    if (error instanceof Error) {
-        return error.message;
-    }
-
-    return "Unknown error.";
 }

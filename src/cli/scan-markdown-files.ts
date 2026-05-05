@@ -1,12 +1,13 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 
-const IGNORED_DIRECTORY_NAMES = new Set([".git", "node_modules"]);
+const ALWAYS_IGNORED_DIRECTORY_NAMES = new Set([".git", "node_modules"]);
 
 export async function scanMarkdownFiles(
-    rootDirectory: string
+    rootDirectory: string,
+    includeHidden: boolean
 ): Promise<string[]> {
-    const files = await walkDirectory(rootDirectory);
+    const files = await walkDirectory(rootDirectory, includeHidden);
 
     return files
         .map((filePath) => {
@@ -29,7 +30,10 @@ export async function scanMarkdownFiles(
         .map((entry) => entry.filePath);
 }
 
-async function walkDirectory(directoryPath: string): Promise<string[]> {
+async function walkDirectory(
+    directoryPath: string,
+    includeHidden: boolean
+): Promise<string[]> {
     const entries = await readdir(directoryPath, { withFileTypes: true });
     const files: string[] = [];
     const subdirectoryWalks: Promise<string[]>[] = [];
@@ -38,11 +42,11 @@ async function walkDirectory(directoryPath: string): Promise<string[]> {
         const entryPath = path.join(directoryPath, entry.name);
 
         if (entry.isDirectory()) {
-            if (shouldIgnoreDirectory(entry.name)) {
+            if (shouldIgnoreDirectory(entry.name, includeHidden)) {
                 continue;
             }
 
-            subdirectoryWalks.push(walkDirectory(entryPath));
+            subdirectoryWalks.push(walkDirectory(entryPath, includeHidden));
             continue;
         }
 
@@ -60,9 +64,10 @@ async function walkDirectory(directoryPath: string): Promise<string[]> {
     return files;
 }
 
-function shouldIgnoreDirectory(directoryName: string) {
-    return (
-        IGNORED_DIRECTORY_NAMES.has(directoryName) ||
-        directoryName.startsWith(".")
-    );
+function shouldIgnoreDirectory(directoryName: string, includeHidden: boolean) {
+    if (ALWAYS_IGNORED_DIRECTORY_NAMES.has(directoryName)) {
+        return true;
+    }
+
+    return !includeHidden && directoryName.startsWith(".");
 }

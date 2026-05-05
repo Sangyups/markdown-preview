@@ -178,7 +178,17 @@ bun run dev -- README.md
 bun run dev -- docs
 ```
 
-디렉터리 탐색 시 `.git`, `node_modules`, 숨김 디렉터리는 기본적으로 제외됩니다.
+디렉터리 탐색 시 `.git`, `node_modules`, 숨김 디렉터리(이름이 `.`로 시작하는
+디렉터리)는 기본적으로 제외됩니다. `config.toml`에서 `include-hidden = true`
+로 설정하면 숨김 디렉터리도 기본으로 스캔합니다. `--include-hidden` 플래그는
+한 번 실행에 한해 숨김 디렉터리를 포함하고, `--no-hidden`은 config 값과
+무관하게 숨김 디렉터리를 항상 제외합니다. `.git`과 `node_modules`는 항상
+제외됩니다.
+
+```bash
+mdp --include-hidden ~/notes
+mdp --no-hidden ~/notes
+```
 
 ## 설정
 
@@ -196,6 +206,7 @@ font-size = 16
 monospace-font-family = ["SFMono-Regular", "JetBrains Mono", "monospace"]
 monospace-font-size = 16
 theme = "auto"
+include-hidden = false
 width = 1560
 height = 1560
 ```
@@ -204,6 +215,11 @@ height = 1560
 따릅니다. 잘못되거나 누락된 값은 기본값으로 대체됩니다. CLI에서
 `--theme=auto`, `--theme=light`, `--theme=dark`를 전달하면 해당 실행에 한해서만
 설정된 테마를 덮어씁니다.
+
+`include-hidden`은 디렉터리 스캔 시 숨김 디렉터리(이름이 `.`로 시작하는
+디렉터리)까지 탐색할지 결정하며 기본값은 `false`입니다. CLI에서
+`--include-hidden`, `--no-hidden`을 전달하면 해당 실행에 한해 설정값을
+덮어씁니다. `.git`과 `node_modules`는 항상 제외됩니다.
 
 ## 렌더링 지원 항목
 

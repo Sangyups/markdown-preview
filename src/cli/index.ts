@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 
 import electronPath from "electron";
 
-import type { AppTheme } from "../shared/config";
+import { type AppTheme, loadAppConfig } from "../shared/config";
 import { toErrorMessage } from "../shared/error-message";
 import type { PreviewSource } from "../shared/preview-source";
 import { resolveRuntimePath } from "../shared/runtime-path";
@@ -13,6 +13,7 @@ import { formatHelpText, shouldShowHelp, shouldShowVersion } from "./help";
 import { resolveTarget } from "./resolve-target";
 import { runFzf } from "./run-fzf";
 import { scanMarkdownFiles } from "./scan-markdown-files";
+import { parseScanOptions } from "./scan-options";
 import {
     createStdinTarget,
     type StdinLike,
@@ -50,10 +51,15 @@ async function main() {
     let exitCode = 0;
 
     try {
-        const { remainingArgs, themeOverride } = parseThemeOverrideOption(
-            process.argv.slice(2)
+        const { remainingArgs: argsAfterTheme, themeOverride } =
+            parseThemeOverrideOption(process.argv.slice(2));
+        const { includeHiddenOverride, remainingArgs } =
+            parseScanOptions(argsAfterTheme);
+        selectedTarget = await selectTarget(
+            remainingArgs,
+            process.cwd(),
+            includeHiddenOverride
         );
-        selectedTarget = await selectTarget(remainingArgs, process.cwd());
 
         if (!selectedTarget) {
             return;
@@ -77,6 +83,7 @@ async function main() {
 async function selectTarget(
     args: string[],
     cwd: string,
+    includeHiddenOverride: boolean | null,
     stdin: StdinLike = process.stdin
 ): Promise<SelectedTarget | null> {
     if (shouldUseStdinTarget(args, stdin)) {
@@ -99,7 +106,12 @@ async function selectTarget(
         };
     }
 
-    const markdownFiles = await scanMarkdownFiles(resolvedTarget.directoryPath);
+    const appConfig = await loadAppConfig();
+    const includeHidden = includeHiddenOverride ?? appConfig.includeHidden;
+    const markdownFiles = await scanMarkdownFiles(
+        resolvedTarget.directoryPath,
+        includeHidden
+    );
 
     if (markdownFiles.length === 0) {
         throw new Error(

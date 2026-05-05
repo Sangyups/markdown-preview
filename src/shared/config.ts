@@ -7,6 +7,7 @@ import { load } from "js-toml";
 export interface AppConfig {
     fontFamily: string[];
     fontSize: number;
+    includeHidden: boolean;
     monospaceFontFamily: string[];
     monospaceFontSize: number;
     theme: AppTheme;
@@ -26,6 +27,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     ],
     fontSize: 16,
     height: 1560,
+    includeHidden: false,
     monospaceFontFamily: ["SFMono-Regular", "JetBrains Mono", "monospace"],
     monospaceFontSize: 16,
     theme: "auto",
@@ -75,6 +77,10 @@ function parseAppConfig(configSource: string): AppConfig {
             DEFAULT_APP_CONFIG.fontFamily
         ),
         fontSize: readPositiveNumber(parsedConfig["font-size"], "fontSize"),
+        includeHidden: readBoolean(
+            parsedConfig["include-hidden"],
+            DEFAULT_APP_CONFIG.includeHidden
+        ),
         monospaceFontFamily: readFontFamilyStack(
             parsedConfig["monospace-font-family"],
             DEFAULT_APP_CONFIG.monospaceFontFamily
@@ -102,6 +108,7 @@ export function serializeAppConfig(appConfig: AppConfig) {
         )}`,
         `monospace-font-size = ${appConfig.monospaceFontSize}`,
         `theme = ${toTomlString(appConfig.theme)}`,
+        `include-hidden = ${appConfig.includeHidden}`,
         `width = ${appConfig.width}`,
         `height = ${appConfig.height}`,
         "",
@@ -152,6 +159,10 @@ function readPositiveNumber(
     return typeof value === "number" && Number.isFinite(value) && value > 0
         ? value
         : DEFAULT_APP_CONFIG[key];
+}
+
+function readBoolean(value: unknown, fallback: boolean) {
+    return typeof value === "boolean" ? value : fallback;
 }
 
 function readTheme(value: unknown) {

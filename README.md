@@ -181,8 +181,17 @@ bun run dev -- README.md
 bun run dev -- docs
 ```
 
-When a directory is scanned, `.git`, `node_modules`, and hidden directories are
-excluded by default.
+When a directory is scanned, `.git`, `node_modules`, and hidden directories
+(those starting with `.`) are excluded by default. Set `include-hidden = true`
+in `config.toml` to include hidden directories by default. Use
+`--include-hidden` to opt in for a single run, or `--no-hidden` to force
+hidden directories to be skipped regardless of the config value. `.git` and
+`node_modules` are always excluded.
+
+```bash
+mdp --include-hidden ~/notes
+mdp --no-hidden ~/notes
+```
 
 ## Configuration
 
@@ -200,6 +209,7 @@ font-size = 16
 monospace-font-family = ["SFMono-Regular", "JetBrains Mono", "monospace"]
 monospace-font-size = 16
 theme = "auto"
+include-hidden = false
 width = 1560
 height = 1560
 ```
@@ -208,6 +218,11 @@ height = 1560
 theme. Invalid or missing values fall back to the built-in defaults. Passing
 `--theme=auto`, `--theme=light`, or `--theme=dark` on the CLI overrides the
 configured theme for that launch only.
+
+`include-hidden` controls whether directory scans descend into hidden
+directories (those starting with `.`). It defaults to `false`. The CLI flags
+`--include-hidden` and `--no-hidden` override the configured value for a
+single run. `.git` and `node_modules` are always skipped.
 
 ## What It Renders
 

@@ -52,6 +52,7 @@ describe("loadAppConfig", () => {
         );
         expect(writtenConfig).toContain("monospace-font-size = 16");
         expect(writtenConfig).toContain('theme = "auto"');
+        expect(writtenConfig).toContain("include-hidden = false");
         expect(writtenConfig).toContain("width = 1560");
         expect(writtenConfig).toContain("height = 1560");
     });
@@ -69,6 +70,7 @@ describe("loadAppConfig", () => {
                 'monospace-font-family = ["Iosevka Term", "monospace"]',
                 "monospace-font-size = 15",
                 'theme = "dark"',
+                "include-hidden = true",
                 "width = 1440",
                 "height = 960",
             ].join("\n")
@@ -80,6 +82,7 @@ describe("loadAppConfig", () => {
             fontFamily: ["Iosevka Aile", "Pretendard", "sans-serif"],
             fontSize: 18,
             height: 960,
+            includeHidden: true,
             monospaceFontFamily: ["Iosevka Term", "monospace"],
             monospaceFontSize: 15,
             theme: "dark",
@@ -110,6 +113,7 @@ describe("loadAppConfig", () => {
             fontFamily: ["Iosevka Aile"],
             fontSize: 18,
             height: 960,
+            includeHidden: false,
             monospaceFontFamily: ["Iosevka Term"],
             monospaceFontSize: 15,
             theme: "auto",
@@ -130,6 +134,7 @@ describe("loadAppConfig", () => {
                 'monospace-font-family = ["", 17]',
                 "monospace-font-size = -1",
                 'theme = "sepia"',
+                'include-hidden = "yes"',
                 "width = -50",
                 "height = 0",
             ].join("\n")

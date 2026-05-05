@@ -45,11 +45,43 @@ describe("scanMarkdownFiles", () => {
             "# ignored"
         );
 
-        const files = await scanMarkdownFiles(rootDir);
+        const files = await scanMarkdownFiles(rootDir, false);
 
         expect(files).toEqual([
             path.join(rootDir, "README.md"),
             path.join(rootDir, "nested", "docs", "guide.md"),
+        ]);
+    });
+
+    test("includes hidden directories when includeHidden is enabled but still skips .git and node_modules", async () => {
+        const rootDir = await makeTempDir();
+
+        await mkdir(path.join(rootDir, ".hidden", "notes"), {
+            recursive: true,
+        });
+        await mkdir(path.join(rootDir, ".git", "objects"), { recursive: true });
+        await mkdir(path.join(rootDir, "node_modules", "pkg"), {
+            recursive: true,
+        });
+        await writeFile(path.join(rootDir, "README.md"), "# root");
+        await writeFile(
+            path.join(rootDir, ".hidden", "notes", "secret.md"),
+            "# secret"
+        );
+        await writeFile(
+            path.join(rootDir, ".git", "objects", "ignored.md"),
+            "# ignored"
+        );
+        await writeFile(
+            path.join(rootDir, "node_modules", "pkg", "ignored.md"),
+            "# ignored"
+        );
+
+        const files = await scanMarkdownFiles(rootDir, true);
+
+        expect(files).toEqual([
+            path.join(rootDir, "README.md"),
+            path.join(rootDir, ".hidden", "notes", "secret.md"),
         ]);
     });
 
@@ -62,7 +94,7 @@ describe("scanMarkdownFiles", () => {
         await writeFile(path.join(rootDir, "guides", "z.md"), "# z");
         await writeFile(path.join(rootDir, "guides", "a.md"), "# a");
 
-        const files = await scanMarkdownFiles(rootDir);
+        const files = await scanMarkdownFiles(rootDir, false);
 
         expect(files).toEqual([
             path.join(rootDir, "a.md"),

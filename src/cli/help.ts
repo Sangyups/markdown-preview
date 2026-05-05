@@ -22,13 +22,20 @@ Options:
   -h, --help           Show this help message and exit
   -v, --version        Show version and exit
   --theme=THEME        Override the configured theme (auto, light, dark)
+  --include-hidden     Include hidden directories (those starting with ".")
+                       when scanning a directory; overrides include-hidden
+                       in config.toml
+  --no-hidden          Skip hidden directories regardless of the
+                       include-hidden config value
 
 Examples:
   mdp ~/notes/demo.md         Open a specific file
   mdp ~/notes                 Browse and select from ~/notes
   mdp                         Browse and select from current directory
-  cat README.md | mdp         Preview from stdin
-  mdp --theme=dark README.md  Override theme for one session
+  cat README.md | mdp             Preview from stdin
+  mdp --theme=dark README.md      Override theme for one session
+  mdp --include-hidden ~/notes    Include hidden directories while scanning
+  mdp --no-hidden ~/notes         Force-skip hidden directories
 
 For more information and configuration, see:
   https://github.com/Sangyups/markdown-preview

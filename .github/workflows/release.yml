@@ -68,3 +68,20 @@ jobs:
         run: gh release upload "v${{ steps.version.outputs.version }}" "${{ steps.pack.outputs.asset }}" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump Homebrew formula
+        if: ${{ env.HOMEBREW_TAP_TOKEN != '' }}
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: markdown-preview
+          formula-path: Formula/markdown-preview.rb
+          homebrew-tap: Sangyups/homebrew-tap
+          base-branch: main
+          download-url: https://github.com/Sangyups/markdown-preview/releases/download/v${{ steps.version.outputs.version }}/markdown-preview-${{ steps.version.outputs.version }}.tgz
+          commit-message: |
+            markdown-preview {{version}}
+
+            Created by https://github.com/mislav/bump-homebrew-formula-action
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

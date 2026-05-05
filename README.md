@@ -36,10 +36,48 @@ source file remains wherever you want to edit it.
 
 ### Requirements
 
+- To install with Homebrew (recommended on macOS): Homebrew on macOS or Linux
 - To install a shared package: Bun 1.3.1 or newer, or Node.js 20 or newer with
   npm 9 or newer
 - To build from source: `mise` and the Bun version pinned by `mise.toml`
 - `fzf` - required only when selecting a file from a directory
+
+### Install With Homebrew
+
+The recommended way to install on macOS (and Linuxbrew):
+
+```bash
+brew install Sangyups/tap/markdown-preview
+mdp -v
+```
+
+Or tap once and install with the short name:
+
+```bash
+brew tap Sangyups/tap
+brew install markdown-preview
+```
+
+Upgrade to the latest release:
+
+```bash
+brew upgrade markdown-preview
+```
+
+Uninstall:
+
+```bash
+brew uninstall markdown-preview
+brew untap Sangyups/tap   # optional
+```
+
+> [!NOTE]
+> During installation you may see a warning starting with
+> `Failed changing dylib ID of .../Electron Framework.framework/...`. This is a
+> known interaction between Homebrew's install-name relocation step and
+> Electron's prebuilt `.dylib` files. Electron resolves its bundled libraries
+> via `@rpath` / `@loader_path`, so the warning does not affect runtime
+> behavior - `mdp` works as expected.
 
 ### Install From A Shared Package
 

@@ -36,9 +36,46 @@ mdp ~/notes/architecture.md
 
 ### 요구 사항
 
+- Homebrew로 설치할 경우(macOS 권장): macOS 또는 Linux의 Homebrew
 - 공유 패키지를 설치할 경우: Bun 1.3.1 이상, 또는 Node.js 20 이상과 npm 9 이상
 - 소스에서 빌드할 경우: `mise`와 `mise.toml`에 명시된 Bun 버전
 - `fzf` - 디렉터리에서 파일을 선택할 때만 필요
+
+### Homebrew로 설치
+
+macOS(및 Linuxbrew) 환경에서 권장하는 설치 방법입니다:
+
+```bash
+brew install Sangyups/tap/markdown-preview
+mdp -v
+```
+
+또는 tap을 한 번 등록한 뒤 짧은 이름으로 설치:
+
+```bash
+brew tap Sangyups/tap
+brew install markdown-preview
+```
+
+최신 릴리즈로 업데이트:
+
+```bash
+brew upgrade markdown-preview
+```
+
+제거:
+
+```bash
+brew uninstall markdown-preview
+brew untap Sangyups/tap   # 선택
+```
+
+> [!NOTE]
+> 설치 도중 `Failed changing dylib ID of .../Electron Framework.framework/...`
+> 로 시작하는 경고가 보일 수 있습니다. Homebrew의 install-name 재배치 단계와
+> Electron의 prebuilt `.dylib` 파일 사이에서 발생하는 알려진 충돌입니다.
+> Electron은 번들된 라이브러리를 `@rpath` / `@loader_path` 로 참조하므로
+> 실행에는 영향이 없으며, `mdp`는 정상적으로 동작합니다.
 
 ### 공유 패키지로 설치
 

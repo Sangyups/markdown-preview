@@ -208,6 +208,8 @@ height = 1560
 ## 렌더링 지원 항목
 
 - `markdown-it`을 통한 일반 Markdown 문법
+- GitHub 스타일 알림 블록쿼트 (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`,
+  `> [!WARNING]`, `> [!CAUTION]`)
 - YAML 및 TOML frontmatter를 구조화된 메타데이터 표로 렌더링 (GitHub 스타일 frontmatter 포함)
 - 가로 스크롤이 지원되는 표
 - `[^1]` 및 `^[인라인]` 문법을 통한 각주

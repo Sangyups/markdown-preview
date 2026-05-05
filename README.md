@@ -212,6 +212,8 @@ configured theme for that launch only.
 ## What It Renders
 
 - Common Markdown syntax through `markdown-it`
+- GitHub-style alert blockquotes (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`,
+  `> [!WARNING]`, `> [!CAUTION]`)
 - YAML and TOML frontmatter rendered as structured metadata tables (GitHub-style
   frontmatter included)
 - Tables with horizontal scrolling

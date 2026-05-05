@@ -36,6 +36,11 @@
     --preview-search-focus: rgba(15, 107, 121, 0.28);
     --preview-search-match: #ffe58a;
     --preview-search-match-active: #ffb84d;
+    --preview-alert-note-foreground: #0969da;
+    --preview-alert-tip-foreground: #1a7f37;
+    --preview-alert-important-foreground: #8250df;
+    --preview-alert-warning-foreground: #9a6700;
+    --preview-alert-caution-foreground: #d1242f;
     --preview-code-background: #22272e;
     --preview-code-border: #444c56;
     --preview-code-foreground: #adbac7;
@@ -83,6 +88,11 @@
         --preview-search-focus: rgba(101, 198, 212, 0.32);
         --preview-search-match: rgba(255, 218, 106, 0.56);
         --preview-search-match-active: rgba(255, 159, 67, 0.82);
+        --preview-alert-note-foreground: #1f6feb;
+        --preview-alert-tip-foreground: #238636;
+        --preview-alert-important-foreground: #8957e5;
+        --preview-alert-warning-foreground: #d29922;
+        --preview-alert-caution-foreground: #da3633;
         color-scheme: dark;
     }
 }
@@ -395,6 +405,57 @@ body {
     color: var(--preview-blockquote-foreground);
     margin-left: 0;
     padding-left: 16px;
+}
+
+.markdown-body .markdown-alert {
+    border-left: 0.25em solid var(--alert-foreground);
+    color: inherit;
+    margin: 0 0 1rem;
+    padding: 0.5rem 1rem;
+}
+
+.markdown-body .markdown-alert > :first-child {
+    margin-top: 0;
+}
+
+.markdown-body .markdown-alert > :last-child {
+    margin-bottom: 0;
+}
+
+.markdown-body .markdown-alert .markdown-alert-title {
+    align-items: center;
+    color: var(--alert-foreground);
+    display: flex;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.markdown-body .markdown-alert .markdown-alert-title .octicon {
+    fill: currentColor;
+    margin-right: 0.5rem;
+    overflow: visible;
+}
+
+.markdown-body .markdown-alert-note {
+    --alert-foreground: var(--preview-alert-note-foreground);
+}
+
+.markdown-body .markdown-alert-tip {
+    --alert-foreground: var(--preview-alert-tip-foreground);
+}
+
+.markdown-body .markdown-alert-important {
+    --alert-foreground: var(--preview-alert-important-foreground);
+}
+
+.markdown-body .markdown-alert-warning {
+    --alert-foreground: var(--preview-alert-warning-foreground);
+}
+
+.markdown-body .markdown-alert-caution {
+    --alert-foreground: var(--preview-alert-caution-foreground);
 }
 
 .table-scroll {

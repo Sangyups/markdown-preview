@@ -443,6 +443,83 @@ describe("renderMarkdown", () => {
         );
     });
 
+    test("renders GFM alerts as div blocks with a typed class and a leading title", () => {
+        const html = renderMarkdown(
+            "> [!NOTE]\n> Useful information that users should know."
+        );
+
+        expect(html).toContain(
+            '<div class="markdown-alert markdown-alert-note">'
+        );
+        expect(html).toContain('<p class="markdown-alert-title">');
+        expect(html).toContain('class="octicon octicon-info"');
+        expect(html).toContain(">Note</p>");
+        expect(html).toContain("Useful information that users should know.");
+        expect(html).not.toContain("[!NOTE]");
+        expect(html).not.toContain("<blockquote");
+    });
+
+    test("renders all GFM alert kinds with matching classes, octicons, and titles", () => {
+        const cases: Array<[string, string, string, string]> = [
+            ["TIP", "tip", "Tip", "octicon-light-bulb"],
+            ["IMPORTANT", "important", "Important", "octicon-report"],
+            ["WARNING", "warning", "Warning", "octicon-alert"],
+            ["CAUTION", "caution", "Caution", "octicon-stop"],
+        ];
+
+        for (const [marker, kind, label, iconClass] of cases) {
+            const html = renderMarkdown(`> [!${marker}]\n> body`);
+
+            expect(html).toContain(
+                `<div class="markdown-alert markdown-alert-${kind}">`
+            );
+            expect(html).toContain('<p class="markdown-alert-title">');
+            expect(html).toContain(`class="octicon ${iconClass}"`);
+            expect(html).toContain(`>${label}</p>`);
+            expect(html).toContain("body");
+            expect(html).not.toContain(`[!${marker}]`);
+        }
+    });
+
+    test("renders GFM alerts with the body separated by a blank quoted line", () => {
+        const html = renderMarkdown(
+            "> [!WARNING]\n>\n> Be careful with this **action**."
+        );
+
+        expect(html).toContain(
+            '<div class="markdown-alert markdown-alert-warning">'
+        );
+        expect(html).toContain('class="octicon octicon-alert"');
+        expect(html).toContain(">Warning</p>");
+        expect(html).toContain("<strong>action</strong>");
+        expect(html).not.toContain("[!WARNING]");
+    });
+
+    test("renders title-only GFM alerts without leftover marker text", () => {
+        const html = renderMarkdown("> [!TIP]");
+
+        expect(html).toContain(
+            '<div class="markdown-alert markdown-alert-tip">'
+        );
+        expect(html).toContain('class="octicon octicon-light-bulb"');
+        expect(html).toContain(">Tip</p>");
+        expect(html).not.toContain("[!TIP]");
+    });
+
+    test("ignores unknown alert markers", () => {
+        const html = renderMarkdown("> [!FYI]\n> not a real alert");
+
+        expect(html).not.toContain("markdown-alert");
+        expect(html).toContain("[!FYI]");
+    });
+
+    test("ignores alert markers that are not at the start of a blockquote", () => {
+        const html = renderMarkdown("> Heads up!\n> [!NOTE]\n> body");
+
+        expect(html).not.toContain("markdown-alert");
+        expect(html).toContain("[!NOTE]");
+    });
+
     test("renders toml frontmatter as structured metadata before the markdown body", () => {
         const html = renderMarkdown(
             [

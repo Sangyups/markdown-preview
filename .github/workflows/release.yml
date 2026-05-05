@@ -77,6 +77,7 @@ jobs:
           formula-path: Formula/markdown-preview.rb
           homebrew-tap: Sangyups/homebrew-tap
           base-branch: main
+          tag-name: v${{ steps.version.outputs.version }}
           download-url: https://github.com/Sangyups/markdown-preview/releases/download/v${{ steps.version.outputs.version }}/markdown-preview-${{ steps.version.outputs.version }}.tgz
           commit-message: |
             markdown-preview {{version}}

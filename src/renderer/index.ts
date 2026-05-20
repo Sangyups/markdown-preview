@@ -1,4 +1,5 @@
 import { toErrorMessage } from "../shared/error-message";
+import { initializePreviewNavigation } from "./navigation";
 import { renderPreview } from "./render-preview";
 import { initializePreviewSearch } from "./search";
 
@@ -8,6 +9,7 @@ async function bootstrap() {
     try {
         const initialState = await window.previewBridge.getInitialState();
         await renderPreview(initialState);
+        initializePreviewNavigation();
         const searchController = initializePreviewSearch();
 
         window.previewBridge.onPreviewUpdate((nextState) => {

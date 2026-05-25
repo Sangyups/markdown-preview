@@ -203,6 +203,86 @@ describe("initializePreviewNavigation", () => {
         expect(scrollBy).toHaveBeenCalledTimes(3);
     });
 
+    test("scrolls on j/k via physical key code when Korean IME is active", async () => {
+        const { document, scrollBy } = await setupNavigation();
+
+        document.dispatchEvent(createKeyboardEvent("ㅓ", { code: "KeyJ" }));
+        document.dispatchEvent(createKeyboardEvent("ㅏ", { code: "KeyK" }));
+
+        expect(scrollBy).toHaveBeenNthCalledWith(1, {
+            behavior: "auto",
+            left: 0,
+            top: 32,
+        });
+        expect(scrollBy).toHaveBeenNthCalledWith(2, {
+            behavior: "auto",
+            left: 0,
+            top: -32,
+        });
+    });
+
+    test("scrolls on Ctrl+d/Ctrl+u via physical key code when Korean IME is active", async () => {
+        const { document, scrollBy } = await setupNavigation();
+
+        document.dispatchEvent(
+            createKeyboardEvent("ㅇ", { code: "KeyD", ctrlKey: true })
+        );
+        document.dispatchEvent(
+            createKeyboardEvent("ㅕ", { code: "KeyU", ctrlKey: true })
+        );
+
+        expect(scrollBy).toHaveBeenNthCalledWith(1, {
+            behavior: "auto",
+            left: 0,
+            top: 300,
+        });
+        expect(scrollBy).toHaveBeenNthCalledWith(2, {
+            behavior: "auto",
+            left: 0,
+            top: -300,
+        });
+    });
+
+    test("scrolls to top on gg via physical key code when Korean IME is active", async () => {
+        const { document, scrollTo } = await setupNavigation();
+
+        document.dispatchEvent(createKeyboardEvent("ㅎ", { code: "KeyG" }));
+        document.dispatchEvent(createKeyboardEvent("ㅎ", { code: "KeyG" }));
+
+        expect(scrollTo).toHaveBeenCalledTimes(1);
+        expect(scrollTo).toHaveBeenCalledWith({
+            behavior: "auto",
+            left: 0,
+            top: 0,
+        });
+    });
+
+    test("scrolls to bottom on shift+g via physical key code when Korean IME is active", async () => {
+        const { document, scrollTo } = await setupNavigation({
+            readScrollHeight: () => 5000,
+        });
+
+        document.dispatchEvent(
+            createKeyboardEvent("ㅎ", { code: "KeyG", shiftKey: true })
+        );
+
+        expect(scrollTo).toHaveBeenCalledTimes(1);
+        expect(scrollTo).toHaveBeenCalledWith({
+            behavior: "auto",
+            left: 0,
+            top: 5000,
+        });
+    });
+
+    test("does not scroll when IME letter maps to an unrelated physical key", async () => {
+        const { document, scrollBy, scrollTo } = await setupNavigation();
+
+        document.dispatchEvent(createKeyboardEvent("ㅋ", { code: "KeyZ" }));
+
+        expect(scrollBy).not.toHaveBeenCalled();
+        expect(scrollTo).not.toHaveBeenCalled();
+    });
+
     test("ignores g and G in typing targets", async () => {
         const { document, scrollTo } = await setupNavigation();
 
@@ -275,6 +355,7 @@ function createKeyboardEvent(
     key: string,
     options: {
         altKey?: boolean;
+        code?: string;
         ctrlKey?: boolean;
         metaKey?: boolean;
         repeat?: boolean;
@@ -286,7 +367,7 @@ function createKeyboardEvent(
         cancelable: true,
     }) as KeyboardEvent;
 
-    Object.defineProperties(event, {
+    const properties: PropertyDescriptorMap = {
         altKey: { value: options.altKey ?? false },
         ctrlKey: { value: options.ctrlKey ?? false },
         key: { value: key },
@@ -294,7 +375,11 @@ function createKeyboardEvent(
         repeat: { value: options.repeat ?? false },
         shiftKey: { value: options.shiftKey ?? false },
         target: { value: options.target ?? null },
-    });
+    };
+    if (options.code !== undefined) {
+        properties.code = { value: options.code };
+    }
+    Object.defineProperties(event, properties);
 
     return event;
 }

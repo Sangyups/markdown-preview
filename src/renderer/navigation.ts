@@ -117,17 +117,32 @@ function readNavigationShortcut(
     event: KeyboardEvent,
     hasPendingG: boolean
 ): NavigationShortcut | null {
-    const lowerKey = event.key.toLowerCase();
+    const candidates: string[] = [];
+    const fromKey = event.key.toLowerCase();
+    if (fromKey) {
+        candidates.push(fromKey);
+    }
+    const fromCode = letterFromCode(event.code);
+    if (fromCode && fromCode !== fromKey) {
+        candidates.push(fromCode);
+    }
 
     if (event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey) {
-        return toLineOrPage(PAGE_SCROLL_DIRECTIONS[lowerKey], "page");
+        for (const candidate of candidates) {
+            const shortcut = toLineOrPage(
+                PAGE_SCROLL_DIRECTIONS[candidate],
+                "page"
+            );
+            if (shortcut) return shortcut;
+        }
+        return null;
     }
 
     if (event.ctrlKey || event.metaKey || event.altKey) {
         return null;
     }
 
-    if (lowerKey === "g") {
+    if (candidates.includes("g")) {
         if (event.shiftKey) {
             return { kind: "edge", edge: "bottom" };
         }
@@ -141,7 +156,20 @@ function readNavigationShortcut(
         return null;
     }
 
-    return toLineOrPage(LINE_SCROLL_DIRECTIONS[lowerKey], "line");
+    for (const candidate of candidates) {
+        const shortcut = toLineOrPage(
+            LINE_SCROLL_DIRECTIONS[candidate],
+            "line"
+        );
+        if (shortcut) return shortcut;
+    }
+    return null;
+}
+
+function letterFromCode(code: string | undefined): string | null {
+    if (!code || code.length !== 4 || !code.startsWith("Key")) return null;
+    const letter = code.charAt(3).toLowerCase();
+    return letter >= "a" && letter <= "z" ? letter : null;
 }
 
 function toLineOrPage(

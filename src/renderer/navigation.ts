@@ -1,21 +1,28 @@
 export interface PreviewNavigationOptions {
     lineScrollDistance?: number;
+    pendingTimeoutMs?: number;
     readViewportHeight?: () => number;
+    readScrollHeight?: () => number;
     scrollBy?: (options: ScrollToOptions) => void;
+    scrollTo?: (options: ScrollToOptions) => void;
+    setTimer?: (callback: () => void, ms: number) => unknown;
+    clearTimer?: (handle: unknown) => void;
 }
 
 const DEFAULT_LINE_SCROLL_DISTANCE = 48;
+const DEFAULT_PENDING_TIMEOUT_MS = 1000;
 const PAGE_SCROLL_RATIO = 0.5;
 const TYPING_TARGET_SELECTOR =
     "input, textarea, select, button, [contenteditable='true']";
 const TYPING_TARGET_TAGS = new Set(["button", "input", "select", "textarea"]);
 
 type ScrollDirection = -1 | 1;
+type DocumentEdge = "top" | "bottom";
 
-interface NavigationShortcut {
-    direction: ScrollDirection;
-    kind: "line" | "page";
-}
+type NavigationShortcut =
+    | { kind: "line" | "page"; direction: ScrollDirection }
+    | { kind: "pending-g" }
+    | { kind: "edge"; edge: DocumentEdge };
 
 const LINE_SCROLL_DIRECTIONS: Record<string, ScrollDirection> = {
     j: 1,
@@ -32,18 +39,67 @@ export function initializePreviewNavigation(
 ) {
     const lineScrollDistance =
         options.lineScrollDistance ?? DEFAULT_LINE_SCROLL_DISTANCE;
+    const pendingTimeoutMs =
+        options.pendingTimeoutMs ?? DEFAULT_PENDING_TIMEOUT_MS;
     const readViewportHeight =
         options.readViewportHeight ?? (() => window.innerHeight);
+    const readScrollHeight =
+        options.readScrollHeight ??
+        (() => document.documentElement.scrollHeight);
     const scrollBy = options.scrollBy ?? ((scroll) => window.scrollBy(scroll));
+    const scrollTo = options.scrollTo ?? ((scroll) => window.scrollTo(scroll));
+    const setTimer =
+        options.setTimer ?? ((callback, ms) => window.setTimeout(callback, ms));
+    const clearTimer =
+        options.clearTimer ??
+        ((handle) => window.clearTimeout(handle as number));
+
+    let pendingTimer: unknown = null;
+    let pendingActive = false;
+
+    const clearPendingG = () => {
+        if (pendingTimer !== null) {
+            clearTimer(pendingTimer);
+            pendingTimer = null;
+        }
+        pendingActive = false;
+    };
 
     document.addEventListener("keydown", (event) => {
         if (event.defaultPrevented) {
+            clearPendingG();
             return;
         }
 
-        const shortcut = readNavigationShortcut(event);
+        const shortcut = readNavigationShortcut(event, pendingActive);
 
         if (!shortcut || isTypingTarget(event.target)) {
+            clearPendingG();
+            return;
+        }
+
+        if (
+            event.repeat &&
+            (shortcut.kind === "pending-g" || shortcut.kind === "edge")
+        ) {
+            return;
+        }
+
+        if (shortcut.kind === "pending-g") {
+            pendingActive = true;
+            pendingTimer = setTimer(() => {
+                pendingActive = false;
+                pendingTimer = null;
+            }, pendingTimeoutMs);
+            return;
+        }
+
+        clearPendingG();
+        event.preventDefault();
+
+        if (shortcut.kind === "edge") {
+            const top = shortcut.edge === "top" ? 0 : readScrollHeight();
+            scrollTo({ behavior: "auto", left: 0, top });
             return;
         }
 
@@ -53,47 +109,54 @@ export function initializePreviewNavigation(
             readViewportHeight
         );
 
-        event.preventDefault();
-        scrollBy({
-            behavior: "auto",
-            left: 0,
-            top,
-        });
+        scrollBy({ behavior: "auto", left: 0, top });
     });
 }
 
 function readNavigationShortcut(
-    event: KeyboardEvent
+    event: KeyboardEvent,
+    hasPendingG: boolean
 ): NavigationShortcut | null {
-    const key = event.key.toLowerCase();
+    const lowerKey = event.key.toLowerCase();
 
     if (event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey) {
-        return toNavigationShortcut(PAGE_SCROLL_DIRECTIONS[key], "page");
+        return toLineOrPage(PAGE_SCROLL_DIRECTIONS[lowerKey], "page");
     }
 
-    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
         return null;
     }
 
-    return toNavigationShortcut(LINE_SCROLL_DIRECTIONS[key], "line");
+    if (lowerKey === "g") {
+        if (event.shiftKey) {
+            return { kind: "edge", edge: "bottom" };
+        }
+        if (hasPendingG) {
+            return { kind: "edge", edge: "top" };
+        }
+        return { kind: "pending-g" };
+    }
+
+    if (event.shiftKey) {
+        return null;
+    }
+
+    return toLineOrPage(LINE_SCROLL_DIRECTIONS[lowerKey], "line");
 }
 
-function toNavigationShortcut(
+function toLineOrPage(
     direction: ScrollDirection | undefined,
-    kind: NavigationShortcut["kind"]
+    kind: "line" | "page"
 ): NavigationShortcut | null {
     if (direction === undefined) {
         return null;
     }
 
-    return {
-        direction,
-        kind,
-    };
+    return { kind, direction };
 }
 
 function readNavigationScrollDelta(
-    shortcut: NavigationShortcut,
+    shortcut: { kind: "line" | "page"; direction: ScrollDirection },
     lineScrollDistance: number,
     readViewportHeight: () => number
 ) {
